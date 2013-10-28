@@ -1,0 +1,32 @@
+#include "debug.h"
+
+//#define DEBUG_LEVEL ( DEBUG_ERROR | DEBUG_HTTP | DEBUG_URL | DEBUG_SDL | DEBUG_IMAGE_CACHE)
+//#define DEBUG_LEVEL ( DEBUG_ERROR | DEBUG_IMAGE_CACHE | DEBUG_HTTP)
+#define DEBUG_LEVEL ( DEBUG_ERROR | DEBUG_DISK | DEBUG_IMAGE_CACHE)
+//#define DEBUG_LEVEL ( 0 )
+
+#define TMP_FILE "/tmp/webshooter"
+
+#define DEF_HTTP_TIMEOUT 10
+
+#define WINDOW_SIZE_X 100
+#define WINDOW_SIZE_Y 100
+
+#define MAX_BACKGROUND 10
+#define MAX_SPRITE 10
+#define MAX_PLAYER 10
+
+#define BACKGROUND_SPEED 0.2
+
+#define PLAYER_SIZE 0.20
+#define PLAYER_SPEED 0.7
+
+#define SHOT_SPEED 1.5
+#define SHOT_ROTATION_SPEED 0.5
+#define SHOT_SIZE 0.02
+
+#define SPRITE_NUM_MAX 3
+#define SPRITE_SIZE 0.20
+//#define SPRITE_SPEED 0.6
+
+#define PLAYER_DEAD_TIME 1.0
