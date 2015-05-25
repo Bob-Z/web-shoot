@@ -292,12 +292,14 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 
 	/* Parse data to find URL  */
 	/* Find search result start */
-	substring=strstr(context->result_page + context->result_read_index,">Search results<");
-	if(substring == NULL) {
-		printd(DEBUG_HTTP,"Not a result page\n");
-		return NULL;
+	if( context->result_read_index == 0 ) {
+		substring=strstr(context->result_page,">Search results<");
+		if(substring == NULL) {
+			printd(DEBUG_HTTP,"Not a result page\n");
+			return NULL;
+		}
+		context->result_read_index = substring - context->result_page;
 	}
-	context->result_read_index = substring - context->result_page;
 
 	while((substring=strstr(context->result_page + context->result_read_index,"&quot;http"))!= NULL){
 
@@ -308,7 +310,7 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 		url = strndup(substring_start,substring_end-substring_start);
 		printd(DEBUG_URL,"URL: %s\n",url);
 
-		context->result_read_index += substring_end - substring ;
+		context->result_read_index = substring_end - context->result_page;
 
 		/* Is this an image ? */
 		if(strcasecmp(".jpg",url+strlen(url)-4) == 0 ||
