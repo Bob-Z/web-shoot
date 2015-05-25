@@ -18,8 +18,6 @@
 #include "network.h"
 #include <pthread.h>
 
-int curl_err;
-
 /*******************************
   create_url
  ******************************/
@@ -30,8 +28,6 @@ static char * create_url(mem_block_t * ctx)
         char word[1024];
 	int i;
 	int j;
-
-	printd(DEBUG_URL,"Entering\n");
 
 	if ( ctx->image_request_size == NULL) {
 		ctx->image_request_size = SIZE_ANY;
@@ -64,11 +60,10 @@ printf("j=%d\n",j);
         //sprintf(buf,"http://images.google.nl/images?hl=fr&start=%d&ndsp=18&q=%s",page*18,keyword);
         //safe=off
         //sprintf(buf,"http://images.google.nl/images?hl=fr%s&start=%d&ndsp=18&q=%s",filter_setting,page*18,keyword);
-        sprintf(buf,"https://www.google.com/search?q=%s&um=1&hl=en&start=%d&sa=N&tbm=isch&sout=1&tbs=isz:%s%s",word,ctx->result_page_num*20,ctx->image_request_size,ctx->filter);
+        //sprintf(buf,"https://www.google.com/search?q=%s&um=1&hl=en&start=%d&sa=N&tbm=isch&sout=1&tbs=isz:%s%s",word,ctx->result_page_num*20,ctx->image_request_size,ctx->filter);
+        sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",ctx->result_page_num*5,word,ctx->image_request_size,ctx->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
         url = strdup(buf);
-
-	printd(DEBUG_URL,"Exiting\n");
 
         return url;
 }
@@ -80,20 +75,17 @@ static size_t data_to_mem(void *buffer, size_t size, size_t nmemb, void *userp)
 {
         mem_block_t * context;
 
-//	printd(DEBUG_HTTP,"Entering\n");
-
         context = (mem_block_t *)userp;
 
         context->result_page = realloc(context->result_page,context->result_page_size + (size*nmemb) + 1 ); /*for terminal NULL */
         if ( context->result_page == NULL ) {
-		printd(DEBUG_HTTP,"Exiting\n");
+		printd(DEBUG_HTTP,"Cannot realloc\n");
 		return 0;
 	}
         memcpy(context->result_page+context->result_page_size, buffer, size*nmemb);
         context->result_page_size += (size*nmemb);
         context->result_page[context->result_page_size] = 0; /*terminal NULL */
 
-//	printd(DEBUG_HTTP,"Exiting\n");
         return (size*nmemb);
 }
 
@@ -105,17 +97,14 @@ static size_t data_to_file(void *buffer, size_t size, size_t nmemb, void *userp)
         ssize_t ret = 0;
         int fd = *(int *)userp;
 
-//	printd(DEBUG_HTTP,"Entering\n");
         ret = write(fd,buffer,size*nmemb);
-//	printd(DEBUG_HTTP,"Exiting\n");
 
         return ret;
 }
 
 static void * async_perform(void * arg)
 {
-	curl_err = curl_easy_perform((CURL *)arg);
-        return NULL;
+	return (void *)curl_easy_perform((CURL *)arg);
 }
 
 /*******************************
@@ -132,18 +121,17 @@ static int web_to_memory( char * url, mem_block_t * context)
 	pthread_t thread;
 	void * thread_ret;
 	struct timespec t;
+	char curl_error_buffer[CURL_ERROR_SIZE];
 
 	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
 	t.tv_nsec = 0;
-//	pthread_mutex_lock(&curl_mutex);
+
         easyhandle = curl_easy_init();
 	if(easyhandle == NULL){
-		printd(DEBUG_ERROR,"curl_easy_init failed");
-		printd(DEBUG_HTTP,"Exiting\n");
-//		pthread_mutex_unlock(&curl_mutex);
+		printd(DEBUG_ERROR,"curl_easy_init failed: %s",curl_error_buffer);
 		return -1;
 	}
-	printd(DEBUG_HTTP,"curl_easy_setopt\n");
+
 	proxy = getenv("http_proxy");
 	if(proxy) {
 		printd(DEBUG_HTTP,"Set proxy to %s\n",proxy);
@@ -155,23 +143,26 @@ static int web_to_memory( char * url, mem_block_t * context)
         curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)context);
 	curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, DEF_HTTP_TIMEOUT);
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
-	printd(DEBUG_HTTP,"curl_easy_perform\n");
-        //err = curl_easy_perform(easyhandle);
+	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 
-	err = pthread_create(&thread,NULL,async_perform,easyhandle);
+	printd(DEBUG_HTTP,"curl_easy_perform\n");
+
+	pthread_create(&thread,NULL,async_perform,easyhandle);
 	err = pthread_timedjoin_np(thread,&thread_ret,&t);
 	if(err) {
 		pthread_cancel(thread);
-		pthread_join(thread,&thread_ret);
-		printd(DEBUG_ERROR,"curl_easy_perform failed: %d\n",err);
+		printd(DEBUG_ERROR,"pthread_timedjoin_np failed: %s\n",strerror(err));
 		curl_easy_cleanup(easyhandle);
-//		pthread_mutex_unlock(&curl_mutex);
 		return -1;
 	}
+	if(thread_ret != CURLE_OK) {
+		printd(DEBUG_ERROR,"curl_easy_perform failed: %s\n",curl_error_buffer);
+		curl_easy_cleanup(easyhandle);
+		return -1;
+	}
+
 	printd(DEBUG_HTTP,"curl_easy_perform succeed\n");
-	printd(DEBUG_HTTP,"curl_easy_cleanup\n");
         curl_easy_cleanup(easyhandle);
-//	pthread_mutex_unlock(&curl_mutex);
 
 	return 0;
 }
@@ -192,6 +183,7 @@ static int web_to_disk( char * url, mem_block_t * context)
         pthread_t thread;
         void * thread_ret;
 	struct timespec t;
+	char curl_error_buffer[CURL_ERROR_SIZE];
 
 	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
 	t.tv_nsec = 0;
@@ -201,17 +193,13 @@ static int web_to_disk( char * url, mem_block_t * context)
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
 	if( fd == -1 ) {
 		printd(DEBUG_ERROR,"Can't open %s\n", filename);
-		printd(DEBUG_HTTP,"Exiting\n");
 		return -1;
 	}
 
-//	pthread_mutex_lock(&curl_mutex);
         easyhandle = curl_easy_init();
 	if(easyhandle == NULL){
 		close(fd);
 		printd(DEBUG_ERROR,"curl_easy_init failed");
-		printd(DEBUG_HTTP,"Exiting\n");
-//		pthread_mutex_unlock(&curl_mutex);
 		return -1;
 	}
 	printd(DEBUG_HTTP,"curl_easy_setopt\n");
@@ -225,24 +213,28 @@ static int web_to_disk( char * url, mem_block_t * context)
         curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)&fd);
 	curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, DEF_HTTP_TIMEOUT);
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
+	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
+
 	printd(DEBUG_HTTP,"curl_easy_perform\n");
-        //err = curl_easy_perform(easyhandle);
 
         err = pthread_create(&thread,NULL,async_perform,easyhandle);
         err = pthread_timedjoin_np(thread,&thread_ret,&t);
         if(err) {
                 pthread_cancel(thread);
-		pthread_join(thread,&thread_ret);
-		printd(DEBUG_ERROR,"curl_easy_perform failed: %d\n",err);
+		printd(DEBUG_ERROR,"pthread_timedjoin_np failed: %s\n",strerror(err));
 		curl_easy_cleanup(easyhandle);
 		close(fd);
-//		pthread_mutex_unlock(&curl_mutex);
 		return -1;
 	}
+	if(thread_ret != CURLE_OK) {
+		printd(DEBUG_ERROR,"curl_easy_perform failed: %s\n",curl_error_buffer);
+		curl_easy_cleanup(easyhandle);
+		close(fd);
+		return -1;
+	}
+
 	printd(DEBUG_HTTP,"curl_easy_perform succeed\n");
-	printd(DEBUG_HTTP,"curl_easy_cleanup\n");
         curl_easy_cleanup(easyhandle);
-//	pthread_mutex_unlock(&curl_mutex);
 
 	close(fd);
 
@@ -258,18 +250,14 @@ static int  get_response_page(mem_block_t * context)
 {
         char * url;
 
-	printd(DEBUG_HTTP,"Entering\n");
-
         url = create_url(context);
         if(url == NULL) {
                 printd(DEBUG_ERROR,"create_url error\n");
-		printd(DEBUG_HTTP,"Exiting\n");
                 return -1;
         }
 
 	if ( web_to_memory(url,context) == -1 ) {
-                printd(DEBUG_ERROR,"reading from web error\n");
-		printd(DEBUG_HTTP,"Exiting\n");
+                printd(DEBUG_ERROR,"web_to_memory error\n");
 		free(url);
                 return -1;
 	}
@@ -278,7 +266,6 @@ static int  get_response_page(mem_block_t * context)
 
 	context->result_page_num++;
 
-	printd(DEBUG_HTTP,"Exiting\n");
         return 0;
 }
 
@@ -298,25 +285,30 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 	char filename[1024];
 	SDL_Surface * image;
 
-	printd(DEBUG_HTTP,"Entering\n");
-
 	if( context == NULL || context->result_page == NULL) {
 		printd(DEBUG_ERROR,"Invalid memory block\n");
-		printd(DEBUG_HTTP,"Exiting\n");
 		return 0;
 	}
 
 	/* Parse data to find URL  */
-	while((substring=strstr(context->result_page + context->result_read_index,"imgurl=http://"))!= NULL){
+	/* Find search result start */
+	substring=strstr(context->result_page + context->result_read_index,">Search results<");
+	if(substring == NULL) {
+		printd(DEBUG_HTTP,"Not a result page\n");
+		return NULL;
+	}
+	context->result_read_index = substring - context->result_page;
+
+	while((substring=strstr(context->result_page + context->result_read_index,"&quot;http"))!= NULL){
 
 		/* get the url */
-		substring_start=strstr(substring,"http://");
-		substring_end = strstr(substring_start,"&amp;");
+		substring_start=strstr(substring,"http");
+		substring_end = strstr(substring_start+strlen("http"),"&quot;");
 
 		url = strndup(substring_start,substring_end-substring_start);
 		printd(DEBUG_URL,"URL: %s\n",url);
 
-		context->result_read_index = substring_end - context->result_page;
+		context->result_read_index += substring_end - substring ;
 
 		/* Is this an image ? */
 		if(strcasecmp(".jpg",url+strlen(url)-4) == 0 ||
@@ -347,7 +339,6 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 					printd(DEBUG_HTTP,"%s is a valid image\n",filename);
 
 					free(url);
-					printd(DEBUG_HTTP,"Exiting\n");
 					return image;
 				}
 			}
@@ -358,7 +349,6 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 	}
 
 	printd(DEBUG_HTTP,"No more URL in parsed page\n");
-	printd(DEBUG_HTTP,"Exiting\n");
 	return NULL;
 }
 
@@ -372,35 +362,33 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 	SDL_Surface * img = NULL;
 	int empty_page = 0;
 
-	printd(DEBUG_PAGE | DEBUG_HTTP,"Entering\n");
-
 	do {
 		/* Get a results page if none exists */
 		if( context->result_page == NULL ) {
-			printd(DEBUG_HTTP,"Fetch a results page\n");
+			printd(DEBUG_HTTP,"Fetch result page %d for keyword \"%s\"\n",context->result_page_num,context->keyword);
 			res = get_response_page(context);
 			if( res == -1) {
-				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page number %d for %s, starting back\n",context->result_page_num,context->keyword);
+				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page %d for keyword \"%s\", starting back\n",context->result_page_num,context->keyword);
 				context->result_page = NULL;
 				context->result_page_size = 0;
 				context->result_read_index = 0;
 				context->result_page_num = 0;	
 				continue;
 			}
-			printd(DEBUG_PAGE | DEBUG_HTTP,"Got a new web page for %s (page number %d)\n",context->keyword,context->result_page_num-1);
+			printd(DEBUG_PAGE | DEBUG_HTTP,"Got result page %d for keyword \"%s\"\n",context->result_page_num-1,context->keyword);
 		}
 
-		printd(DEBUG_HTTP,"Try to find a valid url in this web page\n");
+		printd(DEBUG_HTTP,"Try to find a valid url in this result page\n");
 		img = parse_response_page(context);
 		if(img == NULL ) {
 			free(context->result_page);
 			context->result_page = NULL;
 			context->result_page_size = 0;
 			context->result_read_index = 0;
-			printd(DEBUG_PAGE | DEBUG_HTTP,"No more image on result page %d for %s, trying next result page\n",context->result_page_num-1, context->keyword);
+			printd(DEBUG_PAGE | DEBUG_HTTP,"No more image on result page %d for keyword \"%s\", trying page %d\n",context->result_page_num-1, context->keyword,context->result_page_num);
 			empty_page++;
 			if( empty_page > 2 ) {
-				printd(DEBUG_PAGE | DEBUG_HTTP,"No more image for keyword %s, starting back\n",context->keyword);
+				printd(DEBUG_PAGE | DEBUG_HTTP,"No more image for keyword \"%s\", starting back\n",context->keyword);
 				context->result_page_num = 0;
 			}
 		}
@@ -409,7 +397,6 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 		}
 	} while(img == NULL);
 
-	printd(DEBUG_PAGE | DEBUG_HTTP,"Exiting\n");
         return img;
 }
 
