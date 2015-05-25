@@ -35,16 +35,12 @@ static char * create_url(mem_block_t * ctx)
 
 	if ( ctx->filter == NULL ) {
 		ctx->filter = FILTER_ON;
-//		ctx->filter = FILTER_OFF;
 	}
-printf("keyword=%s\n",ctx->keyword);
 	j=0;
 	for(i=0;i<strlen(ctx->keyword);i++) {
 		if(ctx->keyword[i] == ' ') {
-printf("found space at %d adding at %d\n",i,j);
 			memcpy(&word[j],"%20",strlen("%20"));
 			j=j+strlen("%20");
-printf("j=%d\n",j);
 		}
 		else {
 			word[j] = ctx->keyword[i];
@@ -53,14 +49,6 @@ printf("j=%d\n",j);
 	}
 	word[j]=0;
 
-        /*      int size_start = strlen("http://images.google.nl/images?q=");
-                int size_end = strlen("&oe=utf-8&rls=com.ubuntu:en-US:official&client=firefox-a&um=1&ie=UTF-8&sa=N&hl=fr&tab=wi");
-                int size_keyword = strlen(keyword);
-         */
-        //sprintf(buf,"http://images.google.nl/images?hl=fr&start=%d&ndsp=18&q=%s",page*18,keyword);
-        //safe=off
-        //sprintf(buf,"http://images.google.nl/images?hl=fr%s&start=%d&ndsp=18&q=%s",filter_setting,page*18,keyword);
-        //sprintf(buf,"https://www.google.com/search?q=%s&um=1&hl=en&start=%d&sa=N&tbm=isch&sout=1&tbs=isz:%s%s",word,ctx->result_page_num*20,ctx->image_request_size,ctx->filter);
         sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",ctx->result_page_num*5,word,ctx->image_request_size,ctx->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
         url = strdup(buf);
@@ -188,7 +176,6 @@ static int web_to_disk( char * url, mem_block_t * context,int index)
 	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
 	t.tv_nsec = 0;
 
-	//sprintf(filename,"%s-%s.%ld",TMP_FILE,context->keyword,(long)pthread_self());
 	sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,index);
 
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
@@ -291,20 +278,7 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 		return 0;
 	}
 
-	/* Parse data to find URL  */
 	/* Find search result start */
-/*
-	if( context->result_read_index == 0 ) {
-		substring=strstr(context->result_page,">Search results<");
-		if(substring == NULL) {
-			printd(DEBUG_HTTP,"Not a result page\n");
-			return NULL;
-		}
-		context->result_read_index = substring - context->result_page;
-	}
-*/
-
-//	while((substring=strstr(context->result_page + context->result_read_index,"&quot;http"))!= NULL){
 	while((substring=strstr(context->result_page + context->result_read_index,"fullscreen&quot"))!= NULL){
 
 		/* get the url */
