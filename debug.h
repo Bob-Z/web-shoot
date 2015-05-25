@@ -6,5 +6,5 @@
 #define DEBUG_PAGE 1<<5
 #define DEBUG_DISK 1<<6
 
-#define printd(filter,fmt, ...) print_debug(__func__,filter,fmt, ##__VA_ARGS__)
-int print_debug(const char * function, int filter,const char *fmt, ...);
+#define printd(filter,fmt, ...) print_debug(__FILE__,__LINE__,__func__,filter,fmt, ##__VA_ARGS__)
+int print_debug(const char *file, int line, const char * function, int filter,const char *fmt, ...);
