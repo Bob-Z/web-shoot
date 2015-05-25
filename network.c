@@ -173,7 +173,7 @@ static int web_to_memory( char * url, mem_block_t * context)
 return -1 on error
 return 0 on success
  ******************************/
-static int web_to_disk( char * url, mem_block_t * context)
+static int web_to_disk( char * url, mem_block_t * context,int index)
 {
         CURL * easyhandle;
 	char * proxy;
@@ -188,7 +188,8 @@ static int web_to_disk( char * url, mem_block_t * context)
 	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
 	t.tv_nsec = 0;
 
-	sprintf(filename,"%s-%s.%ld",TMP_FILE,context->keyword,(long)pthread_self());
+	//sprintf(filename,"%s-%s.%ld",TMP_FILE,context->keyword,(long)pthread_self());
+	sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,index);
 
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
 	if( fd == -1 ) {
@@ -202,7 +203,7 @@ static int web_to_disk( char * url, mem_block_t * context)
 		printd(DEBUG_ERROR,"curl_easy_init failed");
 		return -1;
 	}
-	printd(DEBUG_HTTP,"curl_easy_setopt\n");
+
 	proxy = getenv("http_proxy");
 	if(proxy) {
 		printd(DEBUG_HTTP,"Set proxy to %s\n",proxy);
@@ -217,7 +218,7 @@ static int web_to_disk( char * url, mem_block_t * context)
 
 	printd(DEBUG_HTTP,"curl_easy_perform\n");
 
-        err = pthread_create(&thread,NULL,async_perform,easyhandle);
+        pthread_create(&thread,NULL,async_perform,easyhandle);
         err = pthread_timedjoin_np(thread,&thread_ret,&t);
         if(err) {
                 pthread_cancel(thread);
@@ -240,7 +241,6 @@ static int web_to_disk( char * url, mem_block_t * context)
 
 	return 0;
 }
-
 
 /*******************************
   get_response_page
@@ -277,13 +277,14 @@ static int  get_response_page(mem_block_t * context)
  ******************************/
 static SDL_Surface * parse_response_page(mem_block_t * context)
 {
-        int err = -1;
         char * substring = NULL;
         char * substring_start = NULL;
         char * substring_end = NULL;
         char * url = NULL;
 	char filename[1024];
 	SDL_Surface * image;
+	static int index = 0;
+	int err;
 
 	if( context == NULL || context->result_page == NULL) {
 		printd(DEBUG_ERROR,"Invalid memory block\n");
@@ -320,18 +321,17 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 
 			printd(DEBUG_HTTP,"Found a potential resource: %s\n",url);
 			/* Download the resource */
-			err = web_to_disk(url,context);
+			err = web_to_disk(url,context,index);
 
 			if( err == -1) {
 				printd(DEBUG_ERROR,"Error fetching %s\n", url);
-				printd(DEBUG_ERROR,"curl_easy_perform failed: %d\n",err);
 				free(url);
 				continue;
 			}
 
 			/*  image is ready */
 			/* Try to read the image to be sure it is a valid image*/
-			sprintf(filename,"%s-%s.%ld",TMP_FILE,context->keyword,(long)pthread_self());
+			sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,index);
 			image=IMG_Load(filename);
 			if(image) {
 				/* this is an image */
@@ -341,6 +341,7 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 					printd(DEBUG_HTTP,"%s is a valid image\n",filename);
 
 					free(url);
+					index++;
 					return image;
 				}
 			}
