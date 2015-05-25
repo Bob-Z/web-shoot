@@ -293,6 +293,7 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 
 	/* Parse data to find URL  */
 	/* Find search result start */
+/*
 	if( context->result_read_index == 0 ) {
 		substring=strstr(context->result_page,">Search results<");
 		if(substring == NULL) {
@@ -301,8 +302,10 @@ static SDL_Surface * parse_response_page(mem_block_t * context)
 		}
 		context->result_read_index = substring - context->result_page;
 	}
+*/
 
-	while((substring=strstr(context->result_page + context->result_read_index,"&quot;http"))!= NULL){
+//	while((substring=strstr(context->result_page + context->result_read_index,"&quot;http"))!= NULL){
+	while((substring=strstr(context->result_page + context->result_read_index,"fullscreen&quot"))!= NULL){
 
 		/* get the url */
 		substring_start=strstr(substring,"http");
@@ -381,7 +384,7 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 			printd(DEBUG_PAGE | DEBUG_HTTP,"Got result page %d for keyword \"%s\"\n",context->result_page_num-1,context->keyword);
 		}
 
-		printd(DEBUG_HTTP,"Try to find a valid url in this result page\n");
+		printd(DEBUG_HTTP,"Try to find a valid url in page %d\n",context->result_page_num);
 		img = parse_response_page(context);
 		if(img == NULL ) {
 			free(context->result_page);
