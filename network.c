@@ -121,7 +121,7 @@ int web_to_memory( char * url, mem_block_t * context)
 return -1 on error
 return 0 on success
  ******************************/
-static int web_to_disk( char * url, mem_block_t * context,int index)
+static int web_to_disk( char * url, mem_block_t * context)
 {
         CURL * easyhandle;
 	char * proxy;
@@ -136,7 +136,7 @@ static int web_to_disk( char * url, mem_block_t * context,int index)
 	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
 	t.tv_nsec = 0;
 
-	sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,index);
+	sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,(int)pthread_self());
 
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
 	if( fd == -1 ) {
@@ -194,7 +194,6 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 	SDL_Surface * image = NULL;
 	char * url;
 	int err;
-	static int index = 0;
 	char filename[SMALL_BUF];
 
 	while( image == NULL ) {
@@ -215,7 +214,7 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 */
 
 		/* Download the resource */
-		err = web_to_disk(url,context,index);
+		err = web_to_disk(url,context);
 		if( err == -1) {
 			printd(DEBUG_ERROR,"Error fetching %s\n", url);
 			free(url);
@@ -223,7 +222,7 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 		}
 
 		/* Read image */
-		sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,index);
+		sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,(int)pthread_self());
 		image=IMG_Load(filename);
 		if(image == NULL ) {
 			printd(DEBUG_HTTP,"%s is a NOT an image\n",filename);
