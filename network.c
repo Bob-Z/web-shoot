@@ -248,7 +248,6 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 
 		free(url);
 	}
-	index++;
 
         return image;
 }
