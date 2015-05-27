@@ -9,4 +9,5 @@
 #define FILTER_OFF "&ncrnd=9763"
 #define FILTER_ON "&ncrnd=5290"
 
+int web_to_memory( char * url, mem_block_t * context);
 void * network_load_image(void * arg);

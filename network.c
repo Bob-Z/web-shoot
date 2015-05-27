@@ -16,45 +16,8 @@
 #include "parameter.h"
 #include "common.h"
 #include "network.h"
+#include "engine.h"
 #include <pthread.h>
-
-/*******************************
-  create_url
- ******************************/
-static char * create_url(mem_block_t * ctx)
-{
-        char buf[1024];
-        char * url = NULL;
-        char word[1024];
-	int i;
-	int j;
-
-	if ( ctx->image_request_size == NULL) {
-		ctx->image_request_size = SIZE_ANY;
-	}
-
-	if ( ctx->filter == NULL ) {
-		ctx->filter = FILTER_ON;
-	}
-	j=0;
-	for(i=0;i<strlen(ctx->keyword);i++) {
-		if(ctx->keyword[i] == ' ') {
-			memcpy(&word[j],"%20",strlen("%20"));
-			j=j+strlen("%20");
-		}
-		else {
-			word[j] = ctx->keyword[i];
-			j++;
-		}
-	}
-	word[j]=0;
-
-        sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",ctx->result_page_num*5,word,ctx->image_request_size,ctx->filter);
-	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
-        url = strdup(buf);
-
-        return url;
-}
 
 /*******************************
   data_to_mem callback
@@ -101,7 +64,7 @@ static void * async_perform(void * arg)
 return -1 on error
 return 0 on success
  ******************************/
-static int web_to_memory( char * url, mem_block_t * context)
+int web_to_memory( char * url, mem_block_t * context)
 {
         CURL * easyhandle;
 	char * proxy;
@@ -229,155 +192,65 @@ static int web_to_disk( char * url, mem_block_t * context,int index)
 	return 0;
 }
 
-/*******************************
-  get_response_page
-return -1 on error
- ******************************/
-static int  get_response_page(mem_block_t * context)
-{
-        char * url;
-
-        url = create_url(context);
-        if(url == NULL) {
-                printd(DEBUG_ERROR,"create_url error\n");
-                return -1;
-        }
-
-	if ( web_to_memory(url,context) == -1 ) {
-                printd(DEBUG_ERROR,"web_to_memory error\n");
-		free(url);
-                return -1;
-	}
-
-	free(url);
-
-	context->result_page_num++;
-
-        return 0;
-}
-
-/*******************************
-  parse_response_page
-
-  returns NULL if no more image or system error
-  returns  a SDL_Surface pointer to an image
- ******************************/
-static SDL_Surface * parse_response_page(mem_block_t * context)
-{
-        char * substring = NULL;
-        char * substring_start = NULL;
-        char * substring_end = NULL;
-        char * url = NULL;
-	char filename[1024];
-	SDL_Surface * image;
-	static int index = 0;
-	int err;
-
-	if( context == NULL || context->result_page == NULL) {
-		printd(DEBUG_ERROR,"Invalid memory block\n");
-		return 0;
-	}
-
-	/* Find search result start */
-	while((substring=strstr(context->result_page + context->result_read_index,"fullscreen&quot"))!= NULL){
-
-		/* get the url */
-		substring_start=strstr(substring,"http");
-		substring_end = strstr(substring_start+strlen("http"),"&quot;");
-
-		url = strndup(substring_start,substring_end-substring_start);
-		printd(DEBUG_URL,"URL: %s\n",url);
-
-		context->result_read_index = substring_end - context->result_page;
-
-		/* Is this an image ? */
-		if(strcasecmp(".jpg",url+strlen(url)-4) == 0 ||
-				strcasecmp(".gif",url+strlen(url)-4) == 0 ||
-				strcasecmp(".jpeg",url+strlen(url)-5) == 0 ||
-				strcasecmp(".png",url+strlen(url)-4) == 0) {
-
-			printd(DEBUG_HTTP,"Found a potential resource: %s\n",url);
-			/* Download the resource */
-			err = web_to_disk(url,context,index);
-
-			if( err == -1) {
-				printd(DEBUG_ERROR,"Error fetching %s\n", url);
-				free(url);
-				continue;
-			}
-
-			/*  image is ready */
-			/* Try to read the image to be sure it is a valid image*/
-			sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,index);
-			image=IMG_Load(filename);
-			if(image) {
-				/* this is an image */
-				/* Check the compatibility with OpenGL */
-				if( image->format->BytesPerPixel == 4 || image->format->BytesPerPixel == 3 ) {
-					/* this is a valid image */
-					printd(DEBUG_HTTP,"%s is a valid image\n",filename);
-
-					free(url);
-					index++;
-					return image;
-				}
-			}
-			printd(DEBUG_HTTP,"%s is a NOT valid image\n",filename);
-		}
-		free(url);
-		url = NULL;
-	}
-
-	printd(DEBUG_HTTP,"No more URL in parsed page\n");
-	return NULL;
-}
-
-
 /* return NULL on error
    return a SDL_Surface on success
  */
 static SDL_Surface * fetch_image(mem_block_t *context)
 {
-	int res;
-	SDL_Surface * img = NULL;
-	int empty_page = 0;
+	SDL_Surface * image = NULL;
+	char * url;
+	int err;
+	static int index = 0;
+	char filename[SMALL_BUF];
 
-	do {
-		/* Get a results page if none exists */
-		if( context->result_page == NULL ) {
-			printd(DEBUG_HTTP,"Fetch result page %d for keyword \"%s\"\n",context->result_page_num,context->keyword);
-			res = get_response_page(context);
-			if( res == -1) {
-				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page %d for keyword \"%s\", starting back\n",context->result_page_num,context->keyword);
-				context->result_page = NULL;
-				context->result_page_size = 0;
-				context->result_read_index = 0;
-				context->result_page_num = 0;	
-				continue;
-			}
-			printd(DEBUG_PAGE | DEBUG_HTTP,"Got result page %d for keyword \"%s\"\n",context->result_page_num-1,context->keyword);
+	while( image == NULL ) {
+		url =  engine_get_url(context);
+		if( url == NULL ) {
+			return NULL;
 		}
 
-		printd(DEBUG_HTTP,"Try to find a valid url in page %d\n",context->result_page_num);
-		img = parse_response_page(context);
-		if(img == NULL ) {
-			free(context->result_page);
-			context->result_page = NULL;
-			context->result_page_size = 0;
-			context->result_read_index = 0;
-			printd(DEBUG_PAGE | DEBUG_HTTP,"No more image on result page %d for keyword \"%s\", trying page %d\n",context->result_page_num-1, context->keyword,context->result_page_num);
-			empty_page++;
-			if( empty_page > 2 ) {
-				printd(DEBUG_PAGE | DEBUG_HTTP,"No more image for keyword \"%s\", starting back\n",context->keyword);
-				context->result_page_num = 0;
-			}
+		/* Is this an image ? */
+/*
+		if(strcasecmp(".jpg",url+strlen(url)-4) != 0 &&
+				strcasecmp(".gif",url+strlen(url)-4) != 0 &&
+				strcasecmp(".jpeg",url+strlen(url)-5) != 0 &&
+				strcasecmp(".png",url+strlen(url)-4) != 0) {
+			free(url);
+			continue;
 		}
-		else {
-			empty_page = 0;
-		}
-	} while(img == NULL);
+*/
 
-        return img;
+		/* Download the resource */
+		err = web_to_disk(url,context,index);
+		if( err == -1) {
+			printd(DEBUG_ERROR,"Error fetching %s\n", url);
+			free(url);
+			continue;
+		}
+
+		/* Read image */
+		sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,index);
+		image=IMG_Load(filename);
+		if(image == NULL ) {
+			printd(DEBUG_HTTP,"%s is a NOT an image\n",filename);
+			free(url);
+			continue;
+		}
+
+		/* Check OpenGL compatibility */
+		if( image->format->BytesPerPixel != 4 && image->format->BytesPerPixel != 3 ) {
+			printd(DEBUG_HTTP,"%s cannot be displayed \n",filename);
+			SDL_FreeSurface(image);
+
+			free(url);
+			continue;
+		}
+
+		free(url);
+	}
+	index++;
+
+        return image;
 }
 
 void * network_load_image(void * arg)
@@ -389,17 +262,16 @@ void * network_load_image(void * arg)
         pic_t ** pic = load_ctx->image_array;
 
         printd(DEBUG_IMAGE_CACHE,"Entering for %s\n",load_ctx->type);
-        memset(&context,0,sizeof(mem_block_t));
         memset(&pic[0],0,load_ctx->image_array_size *sizeof(pic_t *));
-        context.keyword = strdup(load_ctx->keyword);
-        context.image_request_size = load_ctx->size;
-        context.filter = load_ctx->filter;
+
+	engine_init(&context,load_ctx->keyword,load_ctx->size,load_ctx->filter);
 
         while(1) {
                 if(pic[i]==NULL) {
                         img = fetch_image(&context);
                         if(img == NULL ) {
                                 printd(DEBUG_ERROR,"No more pics for %s request\n",load_ctx->type);
+				engine_destroy(&context);
                                 return NULL;
                         }
                         printd(DEBUG_IMAGE_CACHE,"adding %s %d\n",load_ctx->type,i);
