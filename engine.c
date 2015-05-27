@@ -194,6 +194,10 @@ char * engine_get_url(mem_block_t * context)
 		if( url == NULL ) {
 			printd(DEBUG_PAGE | DEBUG_HTTP,"No more URL for keyword \"%s\" on page %d\n",context->keyword,context->result_page_num);
 			context->result_page_num++;
+			free(context->result_page);
+			context->result_page=NULL;
+			context->result_page_size=0;
+			context->result_read_index=0;
 		}
 	}
 
