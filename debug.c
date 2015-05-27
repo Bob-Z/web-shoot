@@ -25,7 +25,6 @@ int print_debug(const char * file, int line, const char * function, int filter,c
 		va_start(ap, fmt);
 		ret = vprintf(fmt, ap);
 		va_end(ap);
-
 	}
 
 	return ret;
