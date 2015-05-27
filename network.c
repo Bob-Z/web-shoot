@@ -96,8 +96,6 @@ int web_to_memory( char * url, mem_block_t * context)
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 
-	printd(DEBUG_HTTP,"curl_easy_perform\n");
-
 	pthread_create(&thread,NULL,async_perform,easyhandle);
 	err = pthread_timedjoin_np(thread,&thread_ret,&t);
 	if(err) {
@@ -112,7 +110,6 @@ int web_to_memory( char * url, mem_block_t * context)
 		return -1;
 	}
 
-	printd(DEBUG_HTTP,"curl_easy_perform succeed\n");
         curl_easy_cleanup(easyhandle);
 
 	return 0;
@@ -166,8 +163,6 @@ static int web_to_disk( char * url, mem_block_t * context,int index)
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 
-	printd(DEBUG_HTTP,"curl_easy_perform\n");
-
         pthread_create(&thread,NULL,async_perform,easyhandle);
         err = pthread_timedjoin_np(thread,&thread_ret,&t);
         if(err) {
@@ -184,7 +179,6 @@ static int web_to_disk( char * url, mem_block_t * context,int index)
 		return -1;
 	}
 
-	printd(DEBUG_HTTP,"curl_easy_perform succeed\n");
         curl_easy_cleanup(easyhandle);
 
 	close(fd);
