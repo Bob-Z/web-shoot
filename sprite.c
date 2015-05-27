@@ -80,7 +80,7 @@ void sprite_init(char * keyword_pl, char * keyword_sp,char * filter)
         load_ctx_sp.size = SIZE_ICON;
         load_ctx_sp.image_array = sp;
         load_ctx_sp.image_array_size = MAX_SPRITE;
-        load_ctx_pl.filter = filter;
+        load_ctx_sp.filter = filter;
         pthread_create(&sp_thread,NULL,network_load_image,(void *)&load_ctx_sp);
 }
 static void add_shot(double x, double y)
