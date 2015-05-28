@@ -17,6 +17,7 @@
 #include "common.h"
 #include "network.h"
 #include "engine.h"
+#include "misc.h"
 #include <pthread.h>
 
 /*******************************
@@ -132,11 +133,14 @@ static int web_to_disk( char * url, mem_block_t * context)
         void * thread_ret;
 	struct timespec t;
 	char curl_error_buffer[CURL_ERROR_SIZE];
+	char * tmp_dir;
 
 	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
 	t.tv_nsec = 0;
 
-	sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,(int)pthread_self());
+	tmp_dir = get_tmp_dir();
+	sprintf(filename,"%s/%s-%s.%d",tmp_dir,TMP_FILE,context->keyword,(int)pthread_self());
+	free(tmp_dir);
 
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
 	if( fd == -1 ) {
@@ -195,6 +199,7 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 	char * url;
 	int err;
 	char filename[SMALL_BUF];
+	char * tmp_dir;
 
 	while( image == NULL ) {
 		url =  engine_get_url(context);
@@ -222,7 +227,9 @@ static SDL_Surface * fetch_image(mem_block_t *context)
 		}
 
 		/* Read image */
-		sprintf(filename,"%s-%s.%d",TMP_FILE,context->keyword,(int)pthread_self());
+		tmp_dir = get_tmp_dir();
+		sprintf(filename,"%s/%s-%s.%d",tmp_dir,TMP_FILE,context->keyword,(int)pthread_self());
+		free(tmp_dir);
 		image=IMG_Load(filename);
 		if(image == NULL ) {
 			printd(DEBUG_HTTP,"%s is a NOT an image\n",filename);

@@ -5,7 +5,7 @@
 #define DEBUG_LEVEL ( DEBUG_ERROR | DEBUG_DISK | DEBUG_IMAGE_CACHE)
 //#define DEBUG_LEVEL ( 0 )
 
-#define TMP_FILE "/tmp/webshooter"
+#define TMP_FILE "webshooter"
 
 #define DEF_HTTP_TIMEOUT 10
 
