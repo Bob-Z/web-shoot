@@ -134,6 +134,7 @@ int engine_init(mem_block_t * context,const char * keyword,const char * size,con
 	context->image_request_size=strdup(size);
 	context->keyword=strdup(keyword);
 	context->filter=strdup(filter);
+	pthread_mutex_init(&context->page_mutex,NULL);
 
 	return 0;
 }
@@ -154,6 +155,8 @@ int engine_destroy(mem_block_t * context)
 		free(context->filter);
 	}
 
+	pthread_mutex_destroy(&context->page_mutex);
+
 	return 0;
 }
 
@@ -168,6 +171,8 @@ char * engine_get_url(mem_block_t * context)
 	char * url = NULL;
 	int res;
 
+	pthread_mutex_lock(&context->page_mutex);
+
 	while( url == NULL ) {
 		while( context->result_page == NULL ) {
 			printd(DEBUG_PAGE | DEBUG_HTTP,"Reading result page %d for keyword \"%s\"\n",context->result_page_num,context->keyword);
@@ -176,6 +181,7 @@ char * engine_get_url(mem_block_t * context)
 				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page %d for keyword \"%s\", starting back\n",context->result_page_num,context->keyword);
 				if (first_page == TRUE) {
 					printd(DEBUG_PAGE | DEBUG_HTTP,"No URL for keyword \"%s\"\n",context->keyword);
+					pthread_mutex_unlock(&context->page_mutex);
 					return NULL;
 				}
 
@@ -201,5 +207,6 @@ char * engine_get_url(mem_block_t * context)
 		}
 	}
 
+	pthread_mutex_unlock(&context->page_mutex);
 	return url;
 }

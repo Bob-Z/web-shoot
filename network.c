@@ -245,45 +245,65 @@ static SDL_Surface * fetch_image(mem_block_t *context)
         return image;
 }
 
+static void * routine_get_image(void * arg)
+{
+	SDL_Surface * img = NULL;
+	load_context_t * load_ctx = (load_context_t *)arg;
+        pic_t ** pic = load_ctx->image_array;
+	int i;
+
+	while(1) {
+		sem_wait(&load_ctx->array_sem);
+
+		img = fetch_image(&load_ctx->mem_block);
+		if(img == NULL ) {
+			return NULL;
+		}
+
+		pthread_mutex_lock(&load_ctx->image_index_mutex);
+
+		i = load_ctx->current_image_index;
+
+		pic[i]=malloc(sizeof(pic_t));
+		memset(pic[i],0,sizeof(pic_t));
+		pic[i]->surf = img;
+		pic[i]->ratio = (double)(pic[i]->surf->w) / (double)(pic[i]->surf->h);
+		if( pic[i]->ratio > 1.0 ) {
+			pic[i]->w = 1.0;
+			pic[i]->h = 1.0/pic[i]->ratio;
+		}
+		else {
+			pic[i]->w = 1.0*pic[i]->ratio;
+			pic[i]->h = 1.0;
+		}
+		load_ctx->current_image_index = (i+1) % load_ctx->image_array_size;
+
+		pthread_mutex_unlock(&load_ctx->image_index_mutex);
+	}
+}
+
 void * network_load_image(void * arg)
 {
         int i = 0;
-        mem_block_t  context;
-        SDL_Surface * img = NULL;
         load_context_t * load_ctx = (load_context_t *)arg;
-        pic_t ** pic = load_ctx->image_array;
+	pthread_t * thread_array;
 
         printd(DEBUG_IMAGE_CACHE,"Entering for %s\n",load_ctx->type);
-        memset(&pic[0],0,load_ctx->image_array_size *sizeof(pic_t *));
+        memset(load_ctx->image_array,0,load_ctx->image_array_size *sizeof(pic_t *));
 
-	engine_init(&context,load_ctx->keyword,load_ctx->size,load_ctx->filter);
+	engine_init(&load_ctx->mem_block,load_ctx->keyword,load_ctx->size,load_ctx->filter);
 
-        while(1) {
-                if(pic[i]==NULL) {
-                        img = fetch_image(&context);
-                        if(img == NULL ) {
-                                printd(DEBUG_ERROR,"No more pics for %s request\n",load_ctx->type);
-				engine_destroy(&context);
-                                return NULL;
-                        }
-                        printd(DEBUG_IMAGE_CACHE,"adding %s %d\n",load_ctx->type,i);
+	thread_array = malloc( NUM_THREAD * sizeof(pthread_t) );
 
-                        pic[i]=malloc(sizeof(pic_t));
-                        memset(pic[i],0,sizeof(pic_t));
-                        pic[i]->surf = img;
-                        pic[i]->ratio = (double)(pic[i]->surf->w) / (double)(pic[i]->surf->h);
-                        if( pic[i]->ratio > 1.0 ) {
-                                pic[i]->w = 1.0;
-                                pic[i]->h = 1.0/pic[i]->ratio;
-                        }
-                        else {
-                                pic[i]->w = 1.0*pic[i]->ratio;
-                                pic[i]->h = 1.0;
-                        }
-                        i = (i+1) % load_ctx->image_array_size;
-                }
+	for(i=0;i<NUM_THREAD;i++) {
+		pthread_create(&thread_array[i],NULL,routine_get_image,arg);
+	}
 
-                usleep(10000);
-        }
+	for(i=0;i<NUM_THREAD;i++) {
+		pthread_join(thread_array[i],NULL);
+	}
+
+	printd(DEBUG_ERROR,"No more pics for %s request\n",load_ctx->type);
+	engine_destroy(&load_ctx->mem_block);
         return NULL;
 }

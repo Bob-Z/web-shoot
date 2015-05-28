@@ -88,6 +88,7 @@ static void draw_background(int pixel_ref_size, double screen_ratio)
                         opengl_delete_texture(bg[current]);
                         bg[current] = NULL;
                         current = (current + 1) % MAX_BACKGROUND;
+			sem_post(&load_ctx_bg.array_sem);
                 }
         }
 
@@ -110,6 +111,10 @@ void background_init(char * keyword_bg,char * filter, void *(*load_routine) (voi
         load_ctx_bg.image_array = bg;
         load_ctx_bg.image_array_size = MAX_BACKGROUND;
         load_ctx_bg.filter = filter;
+	load_ctx_bg.current_image_index = 0;
+	pthread_mutex_init(&load_ctx_bg.image_index_mutex,NULL);
+	sem_init(&load_ctx_bg.array_sem,0,load_ctx_bg.image_array_size);
+
         pthread_create(&bg_thread,NULL,load_routine,(void *)&load_ctx_bg);
 }
 

@@ -69,6 +69,9 @@ void sprite_init(char * keyword_pl, char * keyword_sp,char * filter)
         load_ctx_pl.image_array = pl;
         load_ctx_pl.image_array_size = MAX_PLAYER;
         load_ctx_pl.filter = filter;
+	load_ctx_pl.current_image_index = 0;
+	pthread_mutex_init(&load_ctx_pl.image_index_mutex,NULL);
+	sem_init(&load_ctx_pl.array_sem,0,load_ctx_pl.image_array_size);
 
         pthread_create(&pl_thread,NULL,network_load_image,(void *)&load_ctx_pl);
         while( pl[1] == NULL ) {
@@ -81,6 +84,10 @@ void sprite_init(char * keyword_pl, char * keyword_sp,char * filter)
         load_ctx_sp.image_array = sp;
         load_ctx_sp.image_array_size = MAX_SPRITE;
         load_ctx_sp.filter = filter;
+        load_ctx_sp.current_image_index = 0;
+        pthread_mutex_init(&load_ctx_sp.image_index_mutex,NULL);
+        sem_init(&load_ctx_sp.array_sem,0,load_ctx_sp.image_array_size);
+
         pthread_create(&sp_thread,NULL,network_load_image,(void *)&load_ctx_sp);
 }
 static void add_shot(double x, double y)
@@ -248,6 +255,7 @@ static void draw_sprite(int pixel_ref_size,double screen_ratio)
                                         printd(DEBUG_IMAGE_CACHE,"Delete sprite %d\n",img_num);
                                         opengl_delete_texture(sp[img_num]);
                                         sp[img_num] = NULL;
+					sem_post(&load_ctx_sp.array_sem);
                                 }
                                 img_num = (img_num +1 ) %MAX_SPRITE;
                         }
@@ -512,9 +520,11 @@ void sprite_control_restart()
 			printd(DEBUG_IMAGE_CACHE,"Delete player %d\n",player_img_num);
 			opengl_delete_texture(pl[player_img_num]);
 			pl[player_img_num] = NULL;
+			sem_post(&load_ctx_pl.array_sem);
 			printd(DEBUG_IMAGE_CACHE,"Delete player %d\n",(player_img_num+1)%MAX_PLAYER);
 			opengl_delete_texture(pl[(player_img_num+1)%MAX_PLAYER]);
 			pl[(player_img_num+1)%MAX_PLAYER] = NULL;
+			sem_post(&load_ctx_pl.array_sem);
 			player_img_num = (player_img_num+2)%MAX_PLAYER;
 		}
 		player_alive = 1;
