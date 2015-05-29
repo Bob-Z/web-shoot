@@ -16,7 +16,19 @@
 #include "parameter.h"
 #include "common.h"
 #include "network.h"
+#include "loader.h"
 #include <pthread.h>
+
+char * size_string[SIZE_NUM] = {
+	"small"
+	,"medium"
+	,"large"
+};
+
+char * filter_string[FILTER_NUM] = {
+	"&ncrnd=5290"
+	,"&ncrnd=9763"
+};
 
 /*******************************
   create_url
@@ -31,13 +43,6 @@ char * create_url(engine_t * engine)
 	int i;
 	int j;
 
-	if ( engine->image_request_size == NULL) {
-		engine->image_request_size = SIZE_ANY;
-	}
-
-	if ( engine->filter == NULL ) {
-		engine->filter = FILTER_ON;
-	}
 	j=0;
 	for(i=0;i<strlen(engine->keyword);i++) {
 		if(engine->keyword[i] == ' ') {
@@ -51,7 +56,7 @@ char * create_url(engine_t * engine)
 	}
 	word[j]=0;
 
-        sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",engine->result_page_num*5,word,engine->image_request_size,engine->filter);
+        sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",engine->result_page_num*5,word,engine->image_size,engine->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
         url = strdup(buf);
 
@@ -122,37 +127,13 @@ static char * parse_response_page(engine_t * engine)
 }
 
 /******************************
- engine_create
-return 0 if no error
-******************************/
-int engine_init(engine_t * engine,const char * keyword,const char * size,const char * filter)
-{
-	engine->result_page=NULL;
-	engine->result_page_size=0;
-	engine->result_page_num=0;
-	engine->result_read_index=0;
-	engine->image_request_size=strdup(size);
-	engine->keyword=strdup(keyword);
-	engine->filter=strdup(filter);
-	pthread_mutex_init(&engine->page_mutex,NULL);
-
-	return 0;
-}
-
-/******************************
  engine_destroy
 return 0 if no error
 ******************************/
-int engine_destroy(engine_t * engine)
+int yandex_engine_destroy(engine_t * engine)
 {
-	if(engine->image_request_size) {
-		free(engine->image_request_size);
-	}
 	if(engine->keyword) {
 		free(engine->keyword);
-	}
-	if(engine->filter) {
-		free(engine->filter);
 	}
 
 	pthread_mutex_destroy(&engine->page_mutex);
@@ -165,7 +146,7 @@ int engine_destroy(engine_t * engine)
 
 Return string MUST be freed
  ******************************/
-char * engine_get_url(engine_t * engine)
+char * yandex_engine_get_url(engine_t * engine)
 {
 	int first_page = FALSE;
 	char * url = NULL;
@@ -177,18 +158,20 @@ char * engine_get_url(engine_t * engine)
 		while( engine->result_page == NULL ) {
 			printd(DEBUG_PAGE | DEBUG_HTTP,"Reading result page %d for keyword \"%s\"\n",engine->result_page_num,engine->keyword);
 			res = get_response_page(engine);
-			if( res == -1) {
+			if( res == -1 || engine->result_page == NULL) {
 				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page %d for keyword \"%s\", starting back\n",engine->result_page_num,engine->keyword);
+
+				engine->result_page = NULL;
+				engine->result_page_size = 0;
+				engine->result_read_index = 0;
+				engine->result_page_num = 0;
+
 				if (first_page == TRUE) {
 					printd(DEBUG_PAGE | DEBUG_HTTP,"No URL for keyword \"%s\"\n",engine->keyword);
 					pthread_mutex_unlock(&engine->page_mutex);
 					return NULL;
 				}
 
-				engine->result_page = NULL;
-				engine->result_page_size = 0;
-				engine->result_read_index = 0;
-				engine->result_page_num = 0;
 				first_page = TRUE;
 			}
 			else {
@@ -209,4 +192,27 @@ char * engine_get_url(engine_t * engine)
 
 	pthread_mutex_unlock(&engine->page_mutex);
 	return url;
+}
+
+/******************************
+ engine_create
+return 0 if no error
+******************************/
+int yandex_engine_init(engine_t * engine,const char * keyword,int size,int filter)
+{
+	engine->result_page=NULL;
+	engine->result_page_size=0;
+	engine->result_page_num=0;
+	engine->result_read_index=0;
+
+	engine->image_size=size_string[size];
+	engine->keyword=strdup(keyword);
+	engine->filter=filter_string[filter];
+
+	pthread_mutex_init(&engine->page_mutex,NULL);
+
+	engine->engine_destroy=yandex_engine_destroy;
+	engine->engine_get_url=yandex_engine_get_url;
+
+	return 0;
 }

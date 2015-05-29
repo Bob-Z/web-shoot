@@ -11,6 +11,7 @@
 #include "opengl.h"
 #include "sprite.h"
 #include "background.h"
+#include "loader.h"
 
 #define UNDEF_COORD (-99999)
 const SDL_VideoInfo* video_info;
@@ -47,7 +48,7 @@ int main(int argc, char **argv)
 	Uint8 *keystate;
 	int fullscreen_w = 0;
 	int fullscreen_h = 0;
-	char * filter = FILTER_ON;
+	int filter = FILTER_ON;
 	int opt_ret;
 	int slideshow = 0;
 	int diskmode = 0;
@@ -142,15 +143,17 @@ int main(int argc, char **argv)
 	screen_ratio = opengl_init(window_w,window_h);
 
 	if(diskmode) {
-		background_init(keyword_bg,filter,disk_load_image);
+		background_init(keyword_bg,filter);
 		usleep(3*1000*1000);
 	}
 	else {
-		background_init(keyword_bg,filter,network_load_image);
+		background_init(keyword_bg,filter);
 	}
+#if 0
 	if(!slideshow) {
 		sprite_init(keyword_pl,keyword_sp,filter);
 	}
+#endif
 
 	while (!bFin)
 	{
@@ -173,6 +176,7 @@ int main(int argc, char **argv)
 				case SDLK_ESCAPE:
 					bFin = 1;
 					break;
+#if 0
 				case SDLK_UP:
 					sprite_control_up(1);
 					break;
@@ -188,6 +192,7 @@ int main(int argc, char **argv)
 				case SDLK_SPACE:
 					sprite_control_shoot();
 					break;
+#endif
 				case SDLK_RETURN:
 					keystate = SDL_GetKeyState(NULL);
 
@@ -207,7 +212,9 @@ int main(int argc, char **argv)
 						screen_ratio = opengl_init(window_w,window_h);
 						break;
 					}
+#if 0
 					sprite_control_restart();
+#endif
 					break;
 				default:
 					printd(DEBUG_SDL,"Une touche à été pressée.\n");
@@ -217,6 +224,7 @@ int main(int argc, char **argv)
 			case SDL_KEYUP:
 				switch (event.key.keysym.sym)
 				{
+#if 0
 				case SDLK_UP:
 					sprite_control_up(0);
 					break;
@@ -229,6 +237,7 @@ int main(int argc, char **argv)
 				case SDLK_LEFT:
 					sprite_control_left(0);
 					break;
+#endif
 				default:
 					;
 				}
@@ -244,7 +253,9 @@ int main(int argc, char **argv)
 
 		opengl_clear_screen();
 		background_draw(fss,screen_ratio);
+#if 0
 		sprite_draw(fss,screen_ratio);
+#endif
 		SDL_GL_SwapBuffers();
 	}
 

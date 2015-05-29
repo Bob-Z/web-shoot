@@ -1,6 +1,20 @@
-#include <SDL.h>
-#include <SDL_image.h>
+#ifndef ENGINE_H
+#define ENGINE_H
 
-int engine_init(mem_block_t * context,const char * keyword,const char * size,const char * filter);
-int engine_destroy(mem_block_t * context);
-char * engine_get_url(mem_block_t * context);
+#include <stdlib.h>
+#include <pthread.h>
+
+typedef struct engine {
+        char * result_page;
+        size_t result_page_size;
+        int result_page_num;
+        int result_read_index;
+        char * image_size;
+        char * keyword;
+        char * filter;
+        pthread_mutex_t page_mutex;
+	int (*engine_destroy)(struct engine *);
+	char * (*engine_get_url)(struct engine *);
+} engine_t;
+
+#endif

@@ -25,18 +25,18 @@
  ******************************/
 static size_t data_to_mem(void *buffer, size_t size, size_t nmemb, void *userp)
 {
-        mem_block_t * context;
+        engine_t * engine;
 
-        context = (mem_block_t *)userp;
+        engine = (engine_t *)userp;
 
-        context->result_page = realloc(context->result_page,context->result_page_size + (size*nmemb) + 1 ); /*for terminal NULL */
-        if ( context->result_page == NULL ) {
+        engine->result_page = realloc(engine->result_page,engine->result_page_size + (size*nmemb) + 1 ); /*for terminal NULL */
+        if ( engine->result_page == NULL ) {
 		printd(DEBUG_HTTP,"Cannot realloc\n");
 		return 0;
 	}
-        memcpy(context->result_page+context->result_page_size, buffer, size*nmemb);
-        context->result_page_size += (size*nmemb);
-        context->result_page[context->result_page_size] = 0; /*terminal NULL */
+        memcpy(engine->result_page+engine->result_page_size, buffer, size*nmemb);
+        engine->result_page_size += (size*nmemb);
+        engine->result_page[engine->result_page_size] = 0; /*terminal NULL */
 
         return (size*nmemb);
 }
@@ -54,9 +54,19 @@ static size_t data_to_file(void *buffer, size_t size, size_t nmemb, void *userp)
         return ret;
 }
 
+/*******************************
+  async_perform callback
+ ******************************/
 static void * async_perform(void * arg)
 {
-	return (void *)curl_easy_perform((CURL *)arg);
+	int err;
+
+	err = curl_easy_perform((CURL *)arg);
+
+	if( err != CURLE_OK ) {
+		return (void*)-1;
+	}
+	return NULL;
 }
 
 /*******************************
@@ -65,7 +75,7 @@ static void * async_perform(void * arg)
 return -1 on error
 return 0 on success
  ******************************/
-int web_to_memory( char * url, mem_block_t * context)
+int web_to_memory( char * url, engine_t * engine)
 {
         CURL * easyhandle;
 	char * proxy;
@@ -92,7 +102,7 @@ int web_to_memory( char * url, mem_block_t * context)
 
         curl_easy_setopt(easyhandle, CURLOPT_URL, url);
         curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, data_to_mem);
-        curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)context);
+        curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)engine);
 	curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, DEF_HTTP_TIMEOUT);
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
@@ -105,7 +115,7 @@ int web_to_memory( char * url, mem_block_t * context)
 		curl_easy_cleanup(easyhandle);
 		return -1;
 	}
-	if(thread_ret != CURLE_OK) {
+	if(thread_ret != NULL) {
 		printd(DEBUG_ERROR,"curl_easy_perform failed: %s\n",curl_error_buffer);
 		curl_easy_cleanup(easyhandle);
 		return -1;
@@ -122,7 +132,7 @@ int web_to_memory( char * url, mem_block_t * context)
 return -1 on error
 return 0 on success
  ******************************/
-static int web_to_disk( char * url, mem_block_t * context)
+int web_to_disk( char * url, engine_t * engine)
 {
         CURL * easyhandle;
 	char * proxy;
@@ -139,7 +149,7 @@ static int web_to_disk( char * url, mem_block_t * context)
 	t.tv_nsec = 0;
 
 	tmp_dir = get_tmp_dir();
-	sprintf(filename,"%s/%s-%s.%d",tmp_dir,TMP_FILE,context->keyword,(int)pthread_self());
+	sprintf(filename,"%s/%s-%s.%d",tmp_dir,TMP_FILE,engine->keyword,(int)pthread_self());
 	free(tmp_dir);
 
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
@@ -188,129 +198,4 @@ static int web_to_disk( char * url, mem_block_t * context)
 	close(fd);
 
 	return 0;
-}
-
-/* return NULL on error
-   return a SDL_Surface on success
- */
-static SDL_Surface * fetch_image(mem_block_t *context)
-{
-	SDL_Surface * image = NULL;
-	char * url;
-	int err;
-	char filename[SMALL_BUF];
-	char * tmp_dir;
-
-	while( image == NULL ) {
-		url =  engine_get_url(context);
-		if( url == NULL ) {
-			return NULL;
-		}
-
-		/* Is this an image ? */
-/*
-		if(strcasecmp(".jpg",url+strlen(url)-4) != 0 &&
-				strcasecmp(".gif",url+strlen(url)-4) != 0 &&
-				strcasecmp(".jpeg",url+strlen(url)-5) != 0 &&
-				strcasecmp(".png",url+strlen(url)-4) != 0) {
-			free(url);
-			continue;
-		}
-*/
-
-		/* Download the resource */
-		err = web_to_disk(url,context);
-		if( err == -1) {
-			printd(DEBUG_ERROR,"Error fetching %s\n", url);
-			free(url);
-			continue;
-		}
-
-		/* Read image */
-		tmp_dir = get_tmp_dir();
-		sprintf(filename,"%s/%s-%s.%d",tmp_dir,TMP_FILE,context->keyword,(int)pthread_self());
-		free(tmp_dir);
-		image=IMG_Load(filename);
-		if(image == NULL ) {
-			printd(DEBUG_HTTP,"%s is a NOT an image\n",filename);
-			free(url);
-			continue;
-		}
-
-		/* Check OpenGL compatibility */
-		if( image->format->BytesPerPixel != 4 && image->format->BytesPerPixel != 3 ) {
-			printd(DEBUG_HTTP,"%s cannot be displayed \n",filename);
-			SDL_FreeSurface(image);
-
-			free(url);
-			continue;
-		}
-
-		free(url);
-	}
-
-        return image;
-}
-
-static void * routine_get_image(void * arg)
-{
-	SDL_Surface * img = NULL;
-	load_context_t * load_ctx = (load_context_t *)arg;
-        pic_t ** pic = load_ctx->image_array;
-	int i;
-
-	while(1) {
-		sem_wait(&load_ctx->array_sem);
-
-		img = fetch_image(&load_ctx->mem_block);
-		if(img == NULL ) {
-			return NULL;
-		}
-
-		pthread_mutex_lock(&load_ctx->image_index_mutex);
-
-		i = load_ctx->current_image_index;
-
-		pic[i]=malloc(sizeof(pic_t));
-		memset(pic[i],0,sizeof(pic_t));
-		pic[i]->surf = img;
-		pic[i]->ratio = (double)(pic[i]->surf->w) / (double)(pic[i]->surf->h);
-		if( pic[i]->ratio > 1.0 ) {
-			pic[i]->w = 1.0;
-			pic[i]->h = 1.0/pic[i]->ratio;
-		}
-		else {
-			pic[i]->w = 1.0*pic[i]->ratio;
-			pic[i]->h = 1.0;
-		}
-		load_ctx->current_image_index = (i+1) % load_ctx->image_array_size;
-
-		pthread_mutex_unlock(&load_ctx->image_index_mutex);
-	}
-}
-
-void * network_load_image(void * arg)
-{
-        int i = 0;
-        load_context_t * load_ctx = (load_context_t *)arg;
-	pthread_t * thread_array;
-
-        printd(DEBUG_IMAGE_CACHE,"Entering for %s\n",load_ctx->type);
-        memset(load_ctx->image_array,0,load_ctx->image_array_size *sizeof(pic_t *));
-
-	engine_init(&load_ctx->mem_block,load_ctx->keyword,load_ctx->size,load_ctx->filter);
-
-	thread_array = malloc( NUM_THREAD * sizeof(pthread_t) );
-
-	for(i=0;i<NUM_THREAD;i++) {
-		pthread_create(&thread_array[i],NULL,routine_get_image,arg);
-	}
-
-	for(i=0;i<NUM_THREAD;i++) {
-		pthread_join(thread_array[i],NULL);
-	}
-
-	printd(DEBUG_ERROR,"No more pics for %s request\n",load_ctx->type);
-	engine_destroy(&load_ctx->mem_block);
-        return NULL;
 }

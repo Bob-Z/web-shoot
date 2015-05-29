@@ -1,4 +1,4 @@
-#include "common.h"
+#include "image.h"
 #include "debug.h"
 
 double opengl_init(int window_w, int window_h)
@@ -29,22 +29,22 @@ double opengl_init(int window_w, int window_h)
 	return screen_ratio;
 }
 
-int opengl_init_texture(pic_t * pic)
+int opengl_init_texture(img_t * img)
 {
         GLenum texture_format;
         GLint  nOfColors;
-        if( pic->init == 0) {
+        if( img->init == 0) {
                 // get the number of channels in the SDL surface
-                nOfColors = pic->surf->format->BytesPerPixel;
+                nOfColors = img->surf->format->BytesPerPixel;
                 if (nOfColors == 4)     // contains an alpha channel
                 {
-                        if (pic->surf->format->Rmask == 0x000000ff)
+                        if (img->surf->format->Rmask == 0x000000ff)
                                 texture_format = GL_RGBA;
                         else
                                 texture_format = GL_BGRA;
                 } else if (nOfColors == 3)     // no alpha channel
                 {
-                        if (pic->surf->format->Rmask == 0x000000ff)
+                        if (img->surf->format->Rmask == 0x000000ff)
                                 texture_format = GL_RGB;
                         else
                                 texture_format = GL_BGR;
@@ -53,26 +53,26 @@ int opengl_init_texture(pic_t * pic)
                         return -1;
                 }
                 glEnable(GL_TEXTURE_2D);
-                glGenTextures( 1, &(pic->tex) );
-                glBindTexture( GL_TEXTURE_2D, pic->tex );
+                glGenTextures( 1, &(img->tex) );
+                glBindTexture( GL_TEXTURE_2D, img->tex );
                 glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
                 glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-                glTexImage2D( GL_TEXTURE_2D, 0, nOfColors, pic->surf->w, pic->surf->h, 0,
-                                texture_format, GL_UNSIGNED_BYTE, pic->surf->pixels );
-                pic->init = 1;
+                glTexImage2D( GL_TEXTURE_2D, 0, nOfColors, img->surf->w, img->surf->h, 0,
+                                texture_format, GL_UNSIGNED_BYTE, img->surf->pixels );
+                img->init = 1;
         }
 
         return 0;
 }
 
-void opengl_delete_texture(pic_t * pic)
+void opengl_delete_texture(img_t * img)
 {
-	glDeleteTextures( 1, &pic->tex );
-	SDL_FreeSurface(pic->surf);
-	free(pic);
+	glDeleteTextures( 1, &img->tex );
+	SDL_FreeSurface(img->surf);
+	free(img);
 }
 
-void opengl_blit(int pixel_ref_size, double x, double y, pic_t * src, double size, double a)
+void opengl_blit(int pixel_ref_size, double x, double y, img_t * src, double size, double a)
 {
         int w;
         int h;

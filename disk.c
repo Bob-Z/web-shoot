@@ -41,7 +41,7 @@ static void add_path(char * path)
 }
 
 
-static SDL_Surface * disk_fetch_image(mem_block_t *context)
+static SDL_Surface * disk_fetch_image(engine_t *engine)
 {
 	static 	path_list_t * list =  NULL;
 	SDL_Surface * img = NULL;
@@ -139,7 +139,7 @@ void * scan_disk(void * arg)
 void * disk_load_image(void * arg)
 {
         int i = 0;
-        mem_block_t  context;
+        engine_t  engine;
         SDL_Surface * img;
         load_context_t * load_ctx = (load_context_t *)arg;
         pic_t ** pic = load_ctx->image_array;

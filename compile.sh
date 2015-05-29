@@ -3,5 +3,5 @@
 CFLAGS=`pkg-config --cflags sdl`
 LIBS=`pkg-config --libs sdl`
 
-#gcc main.c debug.c network.c -g -O0 -Wall $CFLAGS $LIBS -lSDL_image -lSDL_gfx -lcurl -lpthread -lreadline
-gcc -o web-shoot main.c debug.c network.c disk.c opengl.c sprite.c background.c engine.c misc.c -g -O0 -Wall $CFLAGS $LIBS -lSDL_image -lcurl -lpthread -lreadline -lGL -lm
+#gcc -o web-shoot main.c debug.c network.c disk.c opengl.c sprite.c background.c yandex.c misc.c image_fifo.c loader.c -g -O0 -Wall $CFLAGS $LIBS -lSDL_image -lcurl -lpthread -lreadline -lGL -lm
+gcc -o web-shoot main.c debug.c network.c opengl.c background.c yandex.c misc.c image_fifo.c loader.c test_engine.c -g -O0 -Wall $CFLAGS $LIBS -lSDL_image -lcurl -lpthread -lreadline -lGL -lm
