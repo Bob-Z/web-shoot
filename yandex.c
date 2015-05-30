@@ -35,7 +35,7 @@ char * filter_string[FILTER_NUM] = {
 
 You MUST free the return string
  ******************************/
-char * create_url(engine_t * engine)
+static char * create_url(engine_t * engine)
 {
         char buf[1024];
         char * url = NULL;
@@ -130,7 +130,7 @@ static char * parse_response_page(engine_t * engine)
  engine_destroy
 return 0 if no error
 ******************************/
-int yandex_engine_destroy(engine_t * engine)
+static int engine_destroy(engine_t * engine)
 {
 	if(engine->keyword) {
 		free(engine->keyword);
@@ -146,7 +146,7 @@ int yandex_engine_destroy(engine_t * engine)
 
 Return string MUST be freed
  ******************************/
-char * yandex_engine_get_url(engine_t * engine)
+static char * engine_get_url(engine_t * engine)
 {
 	int first_page = FALSE;
 	char * url = NULL;
@@ -211,8 +211,8 @@ int yandex_engine_init(engine_t * engine,const char * keyword,int size,int filte
 
 	pthread_mutex_init(&engine->page_mutex,NULL);
 
-	engine->engine_destroy=yandex_engine_destroy;
-	engine->engine_get_url=yandex_engine_get_url;
+	engine->engine_destroy=engine_destroy;
+	engine->engine_get_url=engine_get_url;
 
 	return 0;
 }

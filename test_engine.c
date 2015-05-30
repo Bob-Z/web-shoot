@@ -23,7 +23,7 @@
  engine_destroy
 return 0 if no error
 ******************************/
-int test_engine_destroy(engine_t * engine)
+static int engine_destroy(engine_t * engine)
 {
 	return 0;
 }
@@ -33,7 +33,7 @@ int test_engine_destroy(engine_t * engine)
 
 Return string MUST be freed
  ******************************/
-char * test_engine_get_url(engine_t * engine)
+static char * engine_get_url(engine_t * engine)
 {
 	return strdup("http://www.smashbros.com/images/og/mario.jpg");
 }
@@ -44,8 +44,8 @@ return 0 if no error
 ******************************/
 int test_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 {
-	engine->engine_destroy=test_engine_destroy;
-        engine->engine_get_url=test_engine_get_url;
+	engine->engine_destroy=engine_destroy;
+        engine->engine_get_url=engine_get_url;
 
 	return 0;
 }

@@ -18,6 +18,7 @@ enum filter_activated {
 enum engine_type {
 	ENG_TEST
 	,ENG_YANDEX
+	,ENG_FILE
 	,ENG_NUM
 	};
 

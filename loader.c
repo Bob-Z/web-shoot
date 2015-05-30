@@ -21,6 +21,7 @@
 #include "misc.h"
 #include "yandex.h"
 #include "test_engine.h"
+#include "file_engine.h"
 #include <pthread.h>
 
 /*******************************
@@ -126,12 +127,22 @@ loader_t * loader_init(int engine, int max_img, char * keyword, int size, int fi
 
 	loader->image_fifo = image_fifo_init(max_img);
 
-	if( engine == ENG_TEST ) {
-		test_engine_init( loader->engine, keyword, size, filter);
-	}
+	switch( engine ) {
+		case ENG_TEST:
+			test_engine_init( loader->engine, keyword, size, filter);
+			break;
 
-	if( engine == ENG_YANDEX ) {
-		yandex_engine_init( loader->engine, keyword, size, filter);
+		case ENG_YANDEX:
+			yandex_engine_init( loader->engine, keyword, size, filter);
+			break;
+
+		case ENG_FILE:
+			file_engine_init( loader->engine, keyword, size, filter);
+			break;
+
+		default:
+                        printd(DEBUG_ERROR,"Engine %d does not exist\n",engine);
+			return NULL;
 	}
 
         loader->thread_array = malloc( NUM_THREAD * sizeof(pthread_t) );

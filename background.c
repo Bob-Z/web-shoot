@@ -101,7 +101,8 @@ void background_init(char * keyword,int filter)
 		bg[i] = NULL;
 	}
 //	loader = loader_init(ENG_YANDEX,8,keyword,SIZE_LARGE,filter);
-	loader = loader_init(ENG_TEST,8,keyword,SIZE_LARGE,filter);
+//	loader = loader_init(ENG_TEST,8,keyword,SIZE_LARGE,filter);
+	loader = loader_init(ENG_FILE,8,keyword,SIZE_LARGE,filter);
 }
 
 void background_draw(int pixel_ref_size, double screen_ratio)
