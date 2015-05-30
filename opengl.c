@@ -34,10 +34,6 @@ int opengl_init_texture(img_t * img)
         GLenum texture_format;
         GLint  nOfColors;
 
-	if( img->surf->format == NULL ) {
-		return -1;
-	}
-
         if( img->init == 0) {
                 // get the number of channels in the SDL surface
                 nOfColors = img->surf->format->BytesPerPixel;

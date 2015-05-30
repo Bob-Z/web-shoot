@@ -68,6 +68,7 @@ static SDL_Surface * fetch_image(engine_t *engine)
                 if( image->format->BytesPerPixel != 4 && image->format->BytesPerPixel != 3 ) {
                         printd(DEBUG_HTTP,"%s cannot be displayed \n",filename);
                         SDL_FreeSurface(image);
+			image=NULL;
 
                         free(url);
                         continue;
