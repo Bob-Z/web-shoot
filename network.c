@@ -111,6 +111,11 @@ int web_to_memory( char * url, network_page_t * page)
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 	curl_easy_setopt(easyhandle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(easyhandle, CURLOPT_USERAGENT, "web-shooter/1.0");
+
+	/* experimental */
+	//curl_easy_setopt(easyhandle, CURLOPT_AUTOREFERER, 1);
+	//curl_easy_setopt(easyhandle, CURLOPT_TRANSFER_ENCODING, 1); 
 
 	pthread_create(&thread,NULL,async_perform,easyhandle);
 	err = pthread_timedjoin_np(thread,&thread_ret,&t);
@@ -182,6 +187,7 @@ int web_to_disk( char * url)
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 	curl_easy_setopt(easyhandle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(easyhandle, CURLOPT_USERAGENT, "web-shooter/1.0");
 
         pthread_create(&thread,NULL,async_perform,easyhandle);
         err = pthread_timedjoin_np(thread,&thread_ret,&t);

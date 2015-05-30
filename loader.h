@@ -20,6 +20,7 @@ enum engine_type {
 	,ENG_YANDEX
 	,ENG_FILE
 	,ENG_WIKIMEDIA
+	,ENG_DEVIANTART
 	,ENG_NUM
 	};
 
