@@ -18,6 +18,53 @@
 #include "network.h"
 #include "loader.h"
 #include <pthread.h>
+#include <dirent.h>
+#include <unistd.h>
+
+
+typedef struct internal {
+	char * path;
+	char ** file;
+	int num_file;
+	int index;
+	pthread_mutex_t engine_mutex;
+} internal_t;
+
+/******************************
+ scan path
+return 0 if no error
+******************************/
+int scan_disk(internal_t * internal,char * path)
+{
+        DIR * d;
+        struct dirent * e;
+        char buf[LARGE_BUF];
+
+        d = opendir(path);
+        if(d == NULL) {
+                printd(DEBUG_ERROR,"Can not open directory %s\n",path);
+                return -1;
+        }
+
+        while( (e = readdir(d)) != 0 ) {
+                if(!strcmp(e->d_name,".")) continue;
+                if(!strcmp(e->d_name,"..")) continue;
+                if(e->d_type == DT_DIR) {
+                        sprintf(buf,"%s/%s",path,e->d_name);
+                        scan_disk(internal,buf);
+                        continue;
+                }
+
+                if(e->d_type != DT_REG) continue;
+                sprintf(buf,"%s/%s",path,e->d_name);
+		internal->num_file++;
+		internal->file = realloc(internal->file,internal->num_file*sizeof(char *));
+		internal->file[internal->num_file-1] = strdup(buf);
+        }
+
+        closedir(d);
+        return 0;
+}
 
 /******************************
  engine_destroy
@@ -25,6 +72,26 @@ return 0 if no error
 ******************************/
 static int engine_destroy(engine_t * engine)
 {
+	internal_t * internal = (internal_t*)engine->internal;
+	int i;
+
+	if(internal) {
+                if(internal->path) {
+                        free(internal->path);
+		}
+
+		if(internal->file) {
+			for(i=0;i<internal->num_file;i++) {
+				free(internal->file[i]);
+			}
+			free(internal->file);
+		}
+
+		pthread_mutex_destroy(&internal->engine_mutex);
+
+		free(internal);
+	}
+
 	return 0;
 }
 
@@ -35,7 +102,27 @@ Return string MUST be freed
  ******************************/
 static char * engine_get_url(engine_t * engine)
 {
-	return strdup("file:///home/fred/Desktop/science_fiction_spaceships.jpg");
+	internal_t * internal = (internal_t*)engine->internal;
+	char * url;
+	char buf[LARGE_BUF];
+
+	pthread_mutex_lock(&internal->engine_mutex);
+
+	if( internal->file == NULL ) {
+		if( scan_disk(internal,internal->path) == -1 ) {
+			pthread_mutex_unlock(&internal->engine_mutex);
+			return NULL;
+		}
+	}
+
+	url = internal->file[internal->index];
+	internal->index = (internal->index+1) % internal->num_file;
+
+	pthread_mutex_unlock(&internal->engine_mutex);
+
+	snprintf(buf,LARGE_BUF,"file://%s",url);
+
+	return strdup(buf);
 }
 
 /******************************
@@ -44,6 +131,16 @@ return 0 if no error
 ******************************/
 int file_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 {
+	internal_t * internal;
+
+        internal = malloc(sizeof(internal_t));
+        memset(internal,0,sizeof(internal_t));
+	engine->internal = internal;
+
+	internal->path = strdup(keyword);
+
+	pthread_mutex_init(&internal->engine_mutex,NULL);
+
 	engine->engine_destroy=engine_destroy;
         engine->engine_get_url=engine_get_url;
 

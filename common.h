@@ -13,6 +13,7 @@
 #define UNDEF_COORD (-99999)
 
 #define SMALL_BUF 1024
+#define LARGE_BUF 10240
 
 #define NUM_THREAD (8)
 
