@@ -33,6 +33,11 @@ int opengl_init_texture(img_t * img)
 {
         GLenum texture_format;
         GLint  nOfColors;
+
+	if( img->surf->format == NULL ) {
+		return -1;
+	}
+
         if( img->init == 0) {
                 // get the number of channels in the SDL surface
                 nOfColors = img->surf->format->BytesPerPixel;
@@ -89,7 +94,9 @@ void opengl_blit(int pixel_ref_size, double x, double y, img_t * src, double siz
                 h = (int)((double)pixel_ref_size * size);
         }
 
-        opengl_init_texture(src);
+        if( opengl_init_texture(src) != 0) {
+		return;
+	}
 
         // Bind the texture to which subsequent calls refer to
         glEnable(GL_TEXTURE_2D);
