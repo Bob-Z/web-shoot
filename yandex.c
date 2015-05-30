@@ -19,23 +19,33 @@
 #include "loader.h"
 #include <pthread.h>
 
-char * size_string[SIZE_NUM] = {
+static char * size_string[SIZE_NUM] = {
 	"small"
 	,"medium"
 	,"large"
 };
 
-char * filter_string[FILTER_NUM] = {
+static char * filter_string[FILTER_NUM] = {
 	"&ncrnd=5290"
 	,"&ncrnd=9763"
 };
+
+typedef struct internal {
+	network_page_t * page;
+	int page_num;
+	int read_index;
+	char * image_size;
+	char * keyword;
+	char * filter;
+	pthread_mutex_t page_mutex;
+} internal_t;
 
 /*******************************
   create_url
 
 You MUST free the return string
  ******************************/
-static char * create_url(engine_t * engine)
+static char * create_url(internal_t * internal)
 {
         char buf[1024];
         char * url = NULL;
@@ -44,19 +54,19 @@ static char * create_url(engine_t * engine)
 	int j;
 
 	j=0;
-	for(i=0;i<strlen(engine->keyword);i++) {
-		if(engine->keyword[i] == ' ') {
+	for(i=0;i<strlen(internal->keyword);i++) {
+		if(internal->keyword[i] == ' ') {
 			memcpy(&word[j],"%20",strlen("%20"));
 			j=j+strlen("%20");
 		}
 		else {
-			word[j] = engine->keyword[i];
+			word[j] = internal->keyword[i];
 			j++;
 		}
 	}
 	word[j]=0;
 
-        sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",engine->result_page_num*5,word,engine->image_size,engine->filter);
+        sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",internal->page_num*5,word,internal->image_size,internal->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
         url = strdup(buf);
 
@@ -67,17 +77,17 @@ static char * create_url(engine_t * engine)
  get_response_page
  return -1 on error
 ******************************/
-static int  get_response_page(engine_t * engine)
+static int  get_response_page(internal_t * internal)
 {
         char * url;
 
-        url = create_url(engine);
+        url = create_url(internal);
         if(url == NULL) {
-                printd(DEBUG_ERROR,"Can't get URL from web engine\n");
+                printd(DEBUG_ERROR,"Can't get URL from Yandex engine\n");
                 return -1;
         }
 
-        if ( web_to_memory(url,engine) == -1 ) {
+        if ( web_to_memory(url,internal->page) == -1 ) {
                 printd(DEBUG_ERROR,"web_to_memory error\n");
                 free(url);
                 return -1;
@@ -85,7 +95,7 @@ static int  get_response_page(engine_t * engine)
 
         free(url);
 
-        engine->result_page_num++;
+        internal->page_num++;
 
         return 0;
 }
@@ -95,22 +105,22 @@ static int  get_response_page(engine_t * engine)
 
 return string MUST be freed
  ******************************/
-static char * parse_response_page(engine_t * engine)
+static char * parse_response_page(internal_t * internal)
 {
         char * substring = NULL;
         char * substring_start = NULL;
         char * substring_end = NULL;
         char * url = NULL;
 
-	if( engine == NULL || engine->result_page == NULL) {
+	if( internal == NULL || internal->page == NULL || internal->page->data == NULL) {
 		printd(DEBUG_ERROR,"Invalid memory block\n");
 		return 0;
 	}
 
-	substring=strstr(engine->result_page + engine->result_read_index,"fullscreen&quot");
+	substring=strstr(internal->page->data + internal->read_index,"fullscreen&quot");
 
 	if( substring == NULL ) {
-		printd(DEBUG_ERROR,"No more URL on page %d\n",engine->result_page_num);
+		printd(DEBUG_ERROR,"No more URL on page %d\n",internal->page_num);
 		return NULL;
 	}
 
@@ -121,7 +131,7 @@ static char * parse_response_page(engine_t * engine)
 	url = strndup(substring_start,substring_end-substring_start);
 	printd(DEBUG_URL,"URL: %s\n",url);
 
-	engine->result_read_index = substring_end - engine->result_page;
+	internal->read_index = substring_end - internal->page->data;
 
 	return url;
 }
@@ -132,11 +142,23 @@ return 0 if no error
 ******************************/
 static int engine_destroy(engine_t * engine)
 {
-	if(engine->keyword) {
-		free(engine->keyword);
-	}
+	internal_t * internal = (internal_t*)engine->internal;
 
-	pthread_mutex_destroy(&engine->page_mutex);
+	if(internal) {
+		pthread_mutex_destroy(&internal->page_mutex);
+
+		if(internal->page) {
+			if(internal->page->data) {
+				free(internal->page->data);
+			}
+			free(internal->page);
+		}
+
+		if(internal->keyword) {
+			free(internal->keyword);
+		}
+		free(internal);
+	}
 
 	return 0;
 }
@@ -151,65 +173,77 @@ static char * engine_get_url(engine_t * engine)
 	int first_page = FALSE;
 	char * url = NULL;
 	int res;
+	internal_t * internal = engine->internal;
 
-	pthread_mutex_lock(&engine->page_mutex);
+	pthread_mutex_lock(&internal->page_mutex);
 
 	while( url == NULL ) {
-		while( engine->result_page == NULL ) {
-			printd(DEBUG_PAGE | DEBUG_HTTP,"Reading result page %d for keyword \"%s\"\n",engine->result_page_num,engine->keyword);
-			res = get_response_page(engine);
-			if( res == -1 || engine->result_page == NULL) {
-				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page %d for keyword \"%s\", starting back\n",engine->result_page_num,engine->keyword);
+		while( internal->page->data == NULL ) {
+			printd(DEBUG_PAGE | DEBUG_HTTP,"Reading result page %d for keyword \"%s\"\n",internal->page_num,internal->keyword);
+			res = get_response_page(internal);
+			if( res == -1 || internal->page->data == NULL) {
+				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page %d for keyword \"%s\", starting back\n",internal->page_num,internal->keyword);
 
-				engine->result_page = NULL;
-				engine->result_page_size = 0;
-				engine->result_read_index = 0;
-				engine->result_page_num = 0;
+				if( internal->page->data ) {
+					free(internal->page->data);
+				}
+				internal->page->data = NULL;
+				internal->page->size = 0;
+				internal->read_index = 0;
+				internal->page_num = 0;
 
 				if (first_page == TRUE) {
-					printd(DEBUG_PAGE | DEBUG_HTTP,"No URL for keyword \"%s\"\n",engine->keyword);
-					pthread_mutex_unlock(&engine->page_mutex);
+					printd(DEBUG_PAGE | DEBUG_HTTP,"No URL for keyword \"%s\"\n",internal->keyword);
+					pthread_mutex_unlock(&internal->page_mutex);
 					return NULL;
 				}
 
 				first_page = TRUE;
 			}
 			else {
-				printd(DEBUG_PAGE | DEBUG_HTTP,"Got result page %d for keyword \"%s\"\n",engine->result_page_num-1,engine->keyword);
+				printd(DEBUG_PAGE | DEBUG_HTTP,"Got result page %d for keyword \"%s\"\n",internal->page_num-1,internal->keyword);
 			}
 		}
 
-		url =  parse_response_page(engine);
+		url =  parse_response_page(internal);
 		if( url == NULL ) {
-			printd(DEBUG_PAGE | DEBUG_HTTP,"No more URL for keyword \"%s\" on page %d\n",engine->keyword,engine->result_page_num);
-			engine->result_page_num++;
-			free(engine->result_page);
-			engine->result_page=NULL;
-			engine->result_page_size=0;
-			engine->result_read_index=0;
+			printd(DEBUG_PAGE | DEBUG_HTTP,"No more URL for keyword \"%s\" on page %d\n",internal->keyword,internal->page_num);
+			internal->page_num++;
+			free(internal->page->data);
+			internal->page->data=NULL;
+			internal->page->size=0;
+			internal->read_index=0;
 		}
 	}
 
-	pthread_mutex_unlock(&engine->page_mutex);
+	pthread_mutex_unlock(&internal->page_mutex);
 	return url;
 }
 
 /******************************
- engine_create
+ yandex_engine_init
 return 0 if no error
 ******************************/
 int yandex_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 {
-	engine->result_page=NULL;
-	engine->result_page_size=0;
-	engine->result_page_num=0;
-	engine->result_read_index=0;
+	internal_t * internal;
 
-	engine->image_size=size_string[size];
-	engine->keyword=strdup(keyword);
-	engine->filter=filter_string[filter];
+	internal = malloc(sizeof(internal_t));
+	memset(internal,0,sizeof(internal_t));
 
-	pthread_mutex_init(&engine->page_mutex,NULL);
+	internal->page = malloc(sizeof(network_page_t));
+	memset(internal->page,0,sizeof(network_page_t));
+
+	engine->internal = internal;
+
+	internal->page_num=0;
+	internal->read_index=0;
+
+	internal->image_size=size_string[size];
+	internal->keyword=strdup(keyword);
+	internal->filter=filter_string[filter];
+
+	pthread_mutex_init(&internal->page_mutex,NULL);
 
 	engine->engine_destroy=engine_destroy;
 	engine->engine_get_url=engine_get_url;

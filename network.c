@@ -25,18 +25,16 @@
  ******************************/
 static size_t data_to_mem(void *buffer, size_t size, size_t nmemb, void *userp)
 {
-        engine_t * engine;
+        network_page_t * page = (network_page_t*) userp;
 
-        engine = (engine_t *)userp;
-
-        engine->result_page = realloc(engine->result_page,engine->result_page_size + (size*nmemb) + 1 ); /*for terminal NULL */
-        if ( engine->result_page == NULL ) {
+        page->data = realloc(page->data,page->size + (size*nmemb) + 1 ); /*for terminal NULL */
+        if ( page->data == NULL ) {
 		printd(DEBUG_HTTP,"Cannot realloc\n");
 		return 0;
 	}
-        memcpy(engine->result_page+engine->result_page_size, buffer, size*nmemb);
-        engine->result_page_size += (size*nmemb);
-        engine->result_page[engine->result_page_size] = 0; /*terminal NULL */
+        memcpy(page->data+page->size, buffer, size*nmemb);
+        page->size += (size*nmemb);
+        page->data[page->size] = 0; /*terminal NULL */
 
         return (size*nmemb);
 }
@@ -75,7 +73,7 @@ static void * async_perform(void * arg)
 return -1 on error
 return 0 on success
  ******************************/
-int web_to_memory( char * url, engine_t * engine)
+int web_to_memory( char * url, network_page_t * page)
 {
         CURL * easyhandle;
 	char * proxy;
@@ -102,7 +100,7 @@ int web_to_memory( char * url, engine_t * engine)
 
         curl_easy_setopt(easyhandle, CURLOPT_URL, url);
         curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, data_to_mem);
-        curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)engine);
+        curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)page);
 	curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, DEF_HTTP_TIMEOUT);
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
@@ -132,7 +130,7 @@ int web_to_memory( char * url, engine_t * engine)
 return -1 on error
 return 0 on success
  ******************************/
-int web_to_disk( char * url, engine_t * engine)
+int web_to_disk( char * url)
 {
         CURL * easyhandle;
 	char * proxy;
@@ -149,7 +147,7 @@ int web_to_disk( char * url, engine_t * engine)
 	t.tv_nsec = 0;
 
 	tmp_dir = get_tmp_dir();
-	sprintf(filename,"%s/%s-%s.%d",tmp_dir,TMP_FILE,engine->keyword,(int)pthread_self());
+	sprintf(filename,"%s/%s.%d",tmp_dir,TMP_FILE,(int)pthread_self());
 	free(tmp_dir);
 
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
