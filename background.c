@@ -72,7 +72,7 @@ static void draw_background(int pixel_ref_size, double screen_ratio)
                 opengl_blit(pixel_ref_size,x_current,0, bg[current],size,0.0);
                 x_current = x_current + bg[current]->ratio;
 
-		current++;
+		current = (current+1) % MAX_IMG;
 		if(bg[current] == NULL) {
 			current = 0;
 		}
