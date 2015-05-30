@@ -98,12 +98,19 @@ int web_to_memory( char * url, network_page_t * page)
         	curl_easy_setopt(easyhandle, CURLOPT_PROXY, proxy);
 	}
 
+	if(page->data) {
+		free(page->data);
+		page->data=NULL;
+		page->size=0;
+	}
+
         curl_easy_setopt(easyhandle, CURLOPT_URL, url);
         curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, data_to_mem);
         curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)page);
 	curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, DEF_HTTP_TIMEOUT);
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
+	curl_easy_setopt(easyhandle, CURLOPT_FOLLOWLOCATION, 1);
 
 	pthread_create(&thread,NULL,async_perform,easyhandle);
 	err = pthread_timedjoin_np(thread,&thread_ret,&t);
@@ -174,6 +181,7 @@ int web_to_disk( char * url)
 	curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, DEF_HTTP_TIMEOUT);
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
+	curl_easy_setopt(easyhandle, CURLOPT_FOLLOWLOCATION, 1);
 
         pthread_create(&thread,NULL,async_perform,easyhandle);
         err = pthread_timedjoin_np(thread,&thread_ret,&t);

@@ -184,11 +184,6 @@ static char * engine_get_url(engine_t * engine)
 			if( res == -1 || internal->page->data == NULL) {
 				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page %d for keyword \"%s\", starting back\n",internal->page_num,internal->keyword);
 
-				if( internal->page->data ) {
-					free(internal->page->data);
-				}
-				internal->page->data = NULL;
-				internal->page->size = 0;
 				internal->read_index = 0;
 				internal->page_num = 0;
 
