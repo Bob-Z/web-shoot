@@ -2,7 +2,6 @@
 #include "parameter.h"
 #include "opengl.h"
 #include "network.h"
-#include "disk.h"
 #include <pthread.h>
 #include "loader.h"
 

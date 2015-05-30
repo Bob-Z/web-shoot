@@ -7,7 +7,6 @@
 #include "debug.h"
 #include "common.h"
 #include "network.h"
-#include "disk.h"
 #include "opengl.h"
 #include "sprite.h"
 #include "background.h"
@@ -26,12 +25,11 @@ int fss;
 
 int fullscreen = 0;
 
-const char optstring[] = "?nfsb:c:p:d";
+const char optstring[] = "?nfsb:c:p:";
 const struct option longopts[] =
         {{ "nofilter",no_argument,NULL,'n' },
         { "fullscreen",no_argument,NULL,'f' },
         { "slideshow",no_argument,NULL,'s' },
-        { "disk",no_argument,NULL,'d' },
         { "background",required_argument,NULL,'b' },
         { "cpu",required_argument,NULL,'c' },
         { "player",required_argument,NULL,'p' },
@@ -51,7 +49,6 @@ int main(int argc, char **argv)
 	int filter = FILTER_ON;
 	int opt_ret;
 	int slideshow = 0;
-	int diskmode = 0;
 
 	srand(time(NULL));
 
@@ -65,9 +62,6 @@ int main(int argc, char **argv)
 				break;
 			case 's':
 				slideshow = 1;
-				break;
-			case 'd':
-				diskmode = 1;
 				break;
 			case 'b':
 				keyword_bg = strdup(optarg);
@@ -142,13 +136,7 @@ int main(int argc, char **argv)
 
 	screen_ratio = opengl_init(window_w,window_h);
 
-	if(diskmode) {
-		background_init(keyword_bg,filter);
-		usleep(3*1000*1000);
-	}
-	else {
-		background_init(keyword_bg,filter);
-	}
+	background_init(keyword_bg,filter);
 #if 0
 	if(!slideshow) {
 		sprite_init(keyword_pl,keyword_sp,filter);
