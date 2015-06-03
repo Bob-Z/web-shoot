@@ -26,13 +26,13 @@ enum image_size {
 	,SIZE_MEDIUM
 	,SIZE_LARGE
 	,SIZE_NUM
-	};
+};
 
 enum filter_activated {
 	FILTER_ON
 	,FILTER_OFF
 	,FILTER_NUM
-	};
+};
 
 enum engine_type {
 	ENG_TEST
@@ -41,11 +41,11 @@ enum engine_type {
 	,ENG_WIKIMEDIA
 	,ENG_DEVIANTART
 	,ENG_NUM
-	};
+};
 
 typedef struct loader {
 	engine_t * engine;
-        image_fifo_t * image_fifo;
+	image_fifo_t * image_fifo;
 	pthread_t * thread_array;
 } loader_t;
 

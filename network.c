@@ -44,18 +44,18 @@
  ******************************/
 static size_t data_to_mem(void *buffer, size_t size, size_t nmemb, void *userp)
 {
-        network_page_t * page = (network_page_t*) userp;
+	network_page_t * page = (network_page_t*) userp;
 
-        page->data = realloc(page->data,page->size + (size*nmemb) + 1 ); /*for terminal NULL */
-        if ( page->data == NULL ) {
+	page->data = realloc(page->data,page->size + (size*nmemb) + 1 ); /*for terminal NULL */
+	if ( page->data == NULL ) {
 		printd(DEBUG_HTTP,"Cannot realloc\n");
 		return 0;
 	}
-        memcpy(page->data+page->size, buffer, size*nmemb);
-        page->size += (size*nmemb);
-        page->data[page->size] = 0; /*terminal NULL */
+	memcpy(page->data+page->size, buffer, size*nmemb);
+	page->size += (size*nmemb);
+	page->data[page->size] = 0; /*terminal NULL */
 
-        return (size*nmemb);
+	return (size*nmemb);
 }
 
 /*******************************
@@ -63,12 +63,12 @@ static size_t data_to_mem(void *buffer, size_t size, size_t nmemb, void *userp)
  ******************************/
 static size_t data_to_file(void *buffer, size_t size, size_t nmemb, void *userp)
 {
-        ssize_t ret = 0;
-        int fd = *(int *)userp;
+	ssize_t ret = 0;
+	int fd = *(int *)userp;
 
-        ret = write(fd,buffer,size*nmemb);
+	ret = write(fd,buffer,size*nmemb);
 
-        return ret;
+	return ret;
 }
 
 /*******************************
@@ -94,7 +94,7 @@ return 0 on success
  ******************************/
 int web_to_memory( char * url, network_page_t * page)
 {
-        CURL * easyhandle;
+	CURL * easyhandle;
 	char * proxy;
 	int err;
 	pthread_t thread;
@@ -105,8 +105,8 @@ int web_to_memory( char * url, network_page_t * page)
 	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
 	t.tv_nsec = 0;
 
-        easyhandle = curl_easy_init();
-	if(easyhandle == NULL){
+	easyhandle = curl_easy_init();
+	if(easyhandle == NULL) {
 		printd(DEBUG_ERROR,"curl_easy_init failed: %s",curl_error_buffer);
 		return -1;
 	}
@@ -114,7 +114,7 @@ int web_to_memory( char * url, network_page_t * page)
 	proxy = getenv("http_proxy");
 	if(proxy) {
 		printd(DEBUG_HTTP,"Set proxy to %s\n",proxy);
-        	curl_easy_setopt(easyhandle, CURLOPT_PROXY, proxy);
+		curl_easy_setopt(easyhandle, CURLOPT_PROXY, proxy);
 	}
 
 	if(page->data) {
@@ -123,9 +123,9 @@ int web_to_memory( char * url, network_page_t * page)
 		page->size=0;
 	}
 
-        curl_easy_setopt(easyhandle, CURLOPT_URL, url);
-        curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, data_to_mem);
-        curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)page);
+	curl_easy_setopt(easyhandle, CURLOPT_URL, url);
+	curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, data_to_mem);
+	curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)page);
 	curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, DEF_HTTP_TIMEOUT);
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
@@ -134,7 +134,7 @@ int web_to_memory( char * url, network_page_t * page)
 
 	/* experimental */
 	//curl_easy_setopt(easyhandle, CURLOPT_AUTOREFERER, 1);
-	//curl_easy_setopt(easyhandle, CURLOPT_TRANSFER_ENCODING, 1); 
+	//curl_easy_setopt(easyhandle, CURLOPT_TRANSFER_ENCODING, 1);
 
 	pthread_create(&thread,NULL,async_perform,easyhandle);
 	err = pthread_timedjoin_np(thread,&thread_ret,&t);
@@ -150,7 +150,7 @@ int web_to_memory( char * url, network_page_t * page)
 		return -1;
 	}
 
-        curl_easy_cleanup(easyhandle);
+	curl_easy_cleanup(easyhandle);
 
 	return 0;
 }
@@ -163,13 +163,13 @@ return 0 on success
  ******************************/
 int web_to_disk( char * url)
 {
-        CURL * easyhandle;
+	CURL * easyhandle;
 	char * proxy;
 	int err;
 	int fd;
-        char filename[1024];
-        pthread_t thread;
-        void * thread_ret;
+	char filename[1024];
+	pthread_t thread;
+	void * thread_ret;
 	struct timespec t;
 	char curl_error_buffer[CURL_ERROR_SIZE];
 	char * tmp_dir;
@@ -187,8 +187,8 @@ int web_to_disk( char * url)
 		return -1;
 	}
 
-        easyhandle = curl_easy_init();
-	if(easyhandle == NULL){
+	easyhandle = curl_easy_init();
+	if(easyhandle == NULL) {
 		close(fd);
 		printd(DEBUG_ERROR,"curl_easy_init failed");
 		return -1;
@@ -197,21 +197,21 @@ int web_to_disk( char * url)
 	proxy = getenv("http_proxy");
 	if(proxy) {
 		printd(DEBUG_HTTP,"Set proxy to %s\n",proxy);
-        	curl_easy_setopt(easyhandle, CURLOPT_PROXY, proxy);
+		curl_easy_setopt(easyhandle, CURLOPT_PROXY, proxy);
 	}
-        curl_easy_setopt(easyhandle, CURLOPT_URL, url);
-        curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, data_to_file);
-        curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)&fd);
+	curl_easy_setopt(easyhandle, CURLOPT_URL, url);
+	curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, data_to_file);
+	curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, (void *)&fd);
 	curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, DEF_HTTP_TIMEOUT);
 	curl_easy_setopt(easyhandle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 	curl_easy_setopt(easyhandle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_USERAGENT, "web-shooter/1.0");
 
-        pthread_create(&thread,NULL,async_perform,easyhandle);
-        err = pthread_timedjoin_np(thread,&thread_ret,&t);
-        if(err) {
-                pthread_cancel(thread);
+	pthread_create(&thread,NULL,async_perform,easyhandle);
+	err = pthread_timedjoin_np(thread,&thread_ret,&t);
+	if(err) {
+		pthread_cancel(thread);
 		printd(DEBUG_ERROR,"pthread_timedjoin_np failed: %s\n",strerror(err));
 		curl_easy_cleanup(easyhandle);
 		close(fd);
@@ -224,7 +224,7 @@ int web_to_disk( char * url)
 		return -1;
 	}
 
-        curl_easy_cleanup(easyhandle);
+	curl_easy_cleanup(easyhandle);
 
 	close(fd);
 

@@ -27,11 +27,11 @@
 #include <semaphore.h>
 
 typedef struct img {
-        SDL_Surface * surf;
-        GLuint  tex;
-        double ratio;
-        double w;
-        double h;
-        int init;
+	SDL_Surface * surf;
+	GLuint  tex;
+	double ratio;
+	double w;
+	double h;
+	int init;
 } img_t;
 #endif

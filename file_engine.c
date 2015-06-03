@@ -55,34 +55,40 @@ return 0 if no error
 ******************************/
 int scan_disk(internal_t * internal,char * path)
 {
-        DIR * d;
-        struct dirent * e;
-        char buf[LARGE_BUF];
+	DIR * d;
+	struct dirent * e;
+	char buf[LARGE_BUF];
 
-        d = opendir(path);
-        if(d == NULL) {
-                printd(DEBUG_ERROR,"Can not open directory %s\n",path);
-                return -1;
-        }
+	d = opendir(path);
+	if(d == NULL) {
+		printd(DEBUG_ERROR,"Can not open directory %s\n",path);
+		return -1;
+	}
 
-        while( (e = readdir(d)) != 0 ) {
-                if(!strcmp(e->d_name,".")) continue;
-                if(!strcmp(e->d_name,"..")) continue;
-                if(e->d_type == DT_DIR) {
-                        sprintf(buf,"%s/%s",path,e->d_name);
-                        scan_disk(internal,buf);
-                        continue;
-                }
+	while( (e = readdir(d)) != 0 ) {
+		if(!strcmp(e->d_name,".")) {
+			continue;
+		}
+		if(!strcmp(e->d_name,"..")) {
+			continue;
+		}
+		if(e->d_type == DT_DIR) {
+			sprintf(buf,"%s/%s",path,e->d_name);
+			scan_disk(internal,buf);
+			continue;
+		}
 
-                if(e->d_type != DT_REG) continue;
-                sprintf(buf,"%s/%s",path,e->d_name);
+		if(e->d_type != DT_REG) {
+			continue;
+		}
+		sprintf(buf,"%s/%s",path,e->d_name);
 		internal->num_file++;
 		internal->file = realloc(internal->file,internal->num_file*sizeof(char *));
 		internal->file[internal->num_file-1] = strdup(buf);
-        }
+	}
 
-        closedir(d);
-        return 0;
+	closedir(d);
+	return 0;
 }
 
 /******************************
@@ -95,12 +101,12 @@ static int engine_destroy(engine_t * engine)
 	int i;
 
 	if(internal) {
-                if(internal->path) {
-                        free(internal->path);
+		if(internal->path) {
+			free(internal->path);
 		}
 
 		if(internal->file) {
-			for(i=0;i<internal->num_file;i++) {
+			for(i=0; i<internal->num_file; i++) {
 				free(internal->file[i]);
 			}
 			free(internal->file);
@@ -152,8 +158,8 @@ int file_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 {
 	internal_t * internal;
 
-        internal = malloc(sizeof(internal_t));
-        memset(internal,0,sizeof(internal_t));
+	internal = malloc(sizeof(internal_t));
+	memset(internal,0,sizeof(internal_t));
 	engine->internal = internal;
 
 	internal->path = strdup(keyword);
@@ -161,7 +167,7 @@ int file_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 	pthread_mutex_init(&internal->engine_mutex,NULL);
 
 	engine->engine_destroy=engine_destroy;
-        engine->engine_get_url=engine_get_url;
+	engine->engine_get_url=engine_get_url;
 
 	return 0;
 }

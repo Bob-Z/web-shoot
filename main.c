@@ -45,14 +45,15 @@ int fss;
 int fullscreen = 0;
 
 const char optstring[] = "?nfsb:c:p:";
-const struct option longopts[] =
-        {{ "nofilter",no_argument,NULL,'n' },
-        { "fullscreen",no_argument,NULL,'f' },
-        { "slideshow",no_argument,NULL,'s' },
-        { "background",required_argument,NULL,'b' },
-        { "cpu",required_argument,NULL,'c' },
-        { "player",required_argument,NULL,'p' },
-        {NULL,0,NULL,0}};
+const struct option longopts[] = {
+	{ "nofilter",no_argument,NULL,'n' },
+	{ "fullscreen",no_argument,NULL,'f' },
+	{ "slideshow",no_argument,NULL,'s' },
+	{ "background",required_argument,NULL,'b' },
+	{ "cpu",required_argument,NULL,'c' },
+	{ "player",required_argument,NULL,'p' },
+	{NULL,0,NULL,0}
+};
 
 int main(int argc, char **argv)
 {
@@ -71,46 +72,45 @@ int main(int argc, char **argv)
 
 	srand(time(NULL));
 
-        while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
-                switch(opt_ret) {
-			case 'f':
-				fullscreen = SDL_FULLSCREEN;
-				break;
-			case 'n':
-				filter = FILTER_OFF;
-				break;
-			case 's':
-				slideshow = 1;
-				break;
-			case 'b':
-				keyword_bg = strdup(optarg);
-				break;
-			case 'c':
-				keyword_sp = strdup(optarg);
-				break;
-			case 'p':
-				keyword_pl = strdup(optarg);
-				break;
-			default:
-				printf("HELP:\n\n");
-				printf("-f : start fullscreen\n");
-				printf("-n : no filter on web request\n");
-				printf("-s : slideshow mode\n");
-				printf("-d : load image from disk\n");
-				printf("-b : background theme (or path)\n");
-				printf("\nIn game mode : \n");
-				printf("-c : cpu controlled sprites theme (or path)\n");
-				printf("-p : player sprites theme (or path)\n");
-				exit(0);
+	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
+		switch(opt_ret) {
+		case 'f':
+			fullscreen = SDL_FULLSCREEN;
+			break;
+		case 'n':
+			filter = FILTER_OFF;
+			break;
+		case 's':
+			slideshow = 1;
+			break;
+		case 'b':
+			keyword_bg = strdup(optarg);
+			break;
+		case 'c':
+			keyword_sp = strdup(optarg);
+			break;
+		case 'p':
+			keyword_pl = strdup(optarg);
+			break;
+		default:
+			printf("HELP:\n\n");
+			printf("-f : start fullscreen\n");
+			printf("-n : no filter on web request\n");
+			printf("-s : slideshow mode\n");
+			printf("-d : load image from disk\n");
+			printf("-b : background theme (or path)\n");
+			printf("\nIn game mode : \n");
+			printf("-c : cpu controlled sprites theme (or path)\n");
+			printf("-p : player sprites theme (or path)\n");
+			exit(0);
 		}
-        }
+	}
 
 
 	fss = window_h;
 
 	/* initialisation de SDL_Video */
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0)
-	{
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
 		printd(DEBUG_ERROR, "Echec d'initialisation de SDL.\n");
 		return 1;
 	}
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 	video_info = SDL_GetVideoInfo();
 	fullscreen_w = video_info->current_w;
 	fullscreen_h = video_info->current_h;
-	
+
 	if(fullscreen) {
 		window_w=fullscreen_w;
 		window_h=fullscreen_h;
@@ -162,12 +162,9 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	while (!bFin)
-	{
-		while (SDL_PollEvent(&event))
-		{
-			switch (event.type)
-			{
+	while (!bFin) {
+		while (SDL_PollEvent(&event)) {
+			switch (event.type) {
 			case SDL_VIDEORESIZE:
 				window_w = event.resize.w;
 				window_h = event.resize.h;
@@ -178,8 +175,7 @@ int main(int argc, char **argv)
 				screen_ratio = opengl_init(window_w,window_h);
 				break;
 			case SDL_KEYDOWN:
-				switch (event.key.keysym.sym)
-				{
+				switch (event.key.keysym.sym) {
 				case SDLK_ESCAPE:
 					bFin = 1;
 					break;
@@ -208,8 +204,7 @@ int main(int argc, char **argv)
 							fullscreen = SDL_FULLSCREEN;
 							window_w=fullscreen_w;
 							window_h=fullscreen_h;
-						}
-						else {
+						} else {
 							fullscreen = 0;
 							window_w=windowed_w;
 							window_h=windowed_h;
@@ -229,8 +224,7 @@ int main(int argc, char **argv)
 				break;
 
 			case SDL_KEYUP:
-				switch (event.key.keysym.sym)
-				{
+				switch (event.key.keysym.sym) {
 #if 0
 				case SDLK_UP:
 					sprite_control_up(0);

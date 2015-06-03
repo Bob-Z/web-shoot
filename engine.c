@@ -44,9 +44,9 @@ You MUST free the return string
  ******************************/
 char * create_url(engine_t * engine)
 {
-        char buf[1024];
-        char * url = NULL;
-        char word[1024];
+	char buf[1024];
+	char * url = NULL;
+	char word[1024];
 	int i;
 	int j;
 
@@ -58,23 +58,22 @@ char * create_url(engine_t * engine)
 		engine->filter = FILTER_ON;
 	}
 	j=0;
-	for(i=0;i<strlen(engine->keyword);i++) {
+	for(i=0; i<strlen(engine->keyword); i++) {
 		if(engine->keyword[i] == ' ') {
 			memcpy(&word[j],"%20",strlen("%20"));
 			j=j+strlen("%20");
-		}
-		else {
+		} else {
 			word[j] = engine->keyword[i];
 			j++;
 		}
 	}
 	word[j]=0;
 
-        sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",engine->result_page_num*5,word,engine->image_request_size,engine->filter);
+	sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",engine->result_page_num*5,word,engine->image_request_size,engine->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
-        url = strdup(buf);
+	url = strdup(buf);
 
-        return url;
+	return url;
 }
 
 /*******************************
@@ -83,25 +82,25 @@ char * create_url(engine_t * engine)
 ******************************/
 static int  get_response_page(engine_t * engine)
 {
-        char * url;
+	char * url;
 
-        url = create_url(engine);
-        if(url == NULL) {
-                printd(DEBUG_ERROR,"Can't get URL from web engine\n");
-                return -1;
-        }
+	url = create_url(engine);
+	if(url == NULL) {
+		printd(DEBUG_ERROR,"Can't get URL from web engine\n");
+		return -1;
+	}
 
-        if ( web_to_memory(url,engine) == -1 ) {
-                printd(DEBUG_ERROR,"web_to_memory error\n");
-                free(url);
-                return -1;
-        }
+	if ( web_to_memory(url,engine) == -1 ) {
+		printd(DEBUG_ERROR,"web_to_memory error\n");
+		free(url);
+		return -1;
+	}
 
-        free(url);
+	free(url);
 
-        engine->result_page_num++;
+	engine->result_page_num++;
 
-        return 0;
+	return 0;
 }
 
 /*******************************
@@ -111,10 +110,10 @@ return string MUST be freed
  ******************************/
 static char * parse_response_page(engine_t * engine)
 {
-        char * substring = NULL;
-        char * substring_start = NULL;
-        char * substring_end = NULL;
-        char * url = NULL;
+	char * substring = NULL;
+	char * substring_start = NULL;
+	char * substring_end = NULL;
+	char * url = NULL;
 
 	if( engine == NULL || engine->result_page == NULL) {
 		printd(DEBUG_ERROR,"Invalid memory block\n");
@@ -209,8 +208,7 @@ char * engine_get_url(engine_t * engine)
 				engine->result_read_index = 0;
 				engine->result_page_num = 0;
 				first_page = TRUE;
-			}
-			else {
+			} else {
 				printd(DEBUG_PAGE | DEBUG_HTTP,"Got result page %d for keyword \"%s\"\n",engine->result_page_num-1,engine->keyword);
 			}
 		}

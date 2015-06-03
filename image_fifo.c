@@ -92,7 +92,7 @@ img_t * image_fifo_pop(image_fifo_t * fifo)
 		fifo->read_index = (fifo->read_index + 1 )%fifo->image_array_size;
 		sem_post(&fifo->available_entry);
 	}
-		
+
 	pthread_mutex_unlock(&fifo->read_mutex);
 
 	return img;

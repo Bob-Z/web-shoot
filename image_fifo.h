@@ -25,8 +25,8 @@
 #include "image.h"
 
 typedef struct image_fifo {
-        img_t ** image_array;
-        int image_array_size;
+	img_t ** image_array;
+	int image_array_size;
 	int read_index;
 	pthread_mutex_t read_mutex;
 	int write_index;

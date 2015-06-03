@@ -52,14 +52,14 @@ You MUST free the return string
  ******************************/
 static char * create_url(internal_t * internal)
 {
-        char buf[1024];
-        char * url = NULL;
+	char buf[1024];
+	char * url = NULL;
 
-        sprintf(buf,"http://www.deviantart.com/browse/whatshot/?offset=%d",internal->page_num*25);
+	sprintf(buf,"http://www.deviantart.com/browse/whatshot/?offset=%d",internal->page_num*25);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
-        url = strdup(buf);
+	url = strdup(buf);
 
-        return url;
+	return url;
 }
 
 /*******************************
@@ -68,25 +68,25 @@ static char * create_url(internal_t * internal)
 ******************************/
 static int  get_response_page(internal_t * internal)
 {
-        char * url;
+	char * url;
 
-        url = create_url(internal);
-        if(url == NULL) {
-                printd(DEBUG_ERROR,"Can't get URL from this engine\n");
-                return -1;
-        }
+	url = create_url(internal);
+	if(url == NULL) {
+		printd(DEBUG_ERROR,"Can't get URL from this engine\n");
+		return -1;
+	}
 
-        if ( web_to_memory(url,internal->page) == -1 ) {
-                printd(DEBUG_ERROR,"web_to_memory error\n");
-                free(url);
-                return -1;
-        }
+	if ( web_to_memory(url,internal->page) == -1 ) {
+		printd(DEBUG_ERROR,"web_to_memory error\n");
+		free(url);
+		return -1;
+	}
 
-        free(url);
+	free(url);
 
-        internal->page_num++;
+	internal->page_num++;
 
-        return 0;
+	return 0;
 }
 
 /*******************************
@@ -96,10 +96,10 @@ return string MUST be freed
  ******************************/
 static char * parse_response_page(internal_t * internal)
 {
-        char * substring = NULL;
-        char * substring_start = NULL;
-        char * substring_end = NULL;
-        char * url = NULL;
+	char * substring = NULL;
+	char * substring_start = NULL;
+	char * substring_end = NULL;
+	char * url = NULL;
 
 	if( internal == NULL || internal->page == NULL || internal->page->data == NULL) {
 		printd(DEBUG_ERROR,"Invalid memory block\n");
@@ -186,8 +186,7 @@ static char * engine_get_url(engine_t * engine)
 				}
 
 				first_page = TRUE;
-			}
-			else {
+			} else {
 				printd(DEBUG_PAGE | DEBUG_HTTP,"Got result page %d\n",internal->page_num-1);
 			}
 		}

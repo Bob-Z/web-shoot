@@ -52,51 +52,51 @@
  */
 static SDL_Surface * fetch_image(engine_t *engine)
 {
-        SDL_Surface * image = NULL;
-        char * url;
-        int err;
-        char filename[SMALL_BUF];
-        char * tmp_dir;
+	SDL_Surface * image = NULL;
+	char * url;
+	int err;
+	char filename[SMALL_BUF];
+	char * tmp_dir;
 
-        while( image == NULL ) {
-                url =  engine->engine_get_url(engine);
-                if( url == NULL ) {
-                        return NULL;
-                }
+	while( image == NULL ) {
+		url =  engine->engine_get_url(engine);
+		if( url == NULL ) {
+			return NULL;
+		}
 
-                /* Download the resource */
-                err = web_to_disk(url);
-                if( err == -1) {
-                        printd(DEBUG_ERROR,"Error fetching %s\n", url);
-                        free(url);
-                        continue;
-                }
+		/* Download the resource */
+		err = web_to_disk(url);
+		if( err == -1) {
+			printd(DEBUG_ERROR,"Error fetching %s\n", url);
+			free(url);
+			continue;
+		}
 
-                /* Read image */
-                tmp_dir = get_tmp_dir();
-                sprintf(filename,"%s/%s.%d",tmp_dir,TMP_FILE,(int)pthread_self());
-                free(tmp_dir);
-                image=IMG_Load(filename);
-                if(image == NULL ) {
-                        printd(DEBUG_HTTP,"%s is a NOT an image\n",filename);
-                        free(url);
-                        continue;
-                }
+		/* Read image */
+		tmp_dir = get_tmp_dir();
+		sprintf(filename,"%s/%s.%d",tmp_dir,TMP_FILE,(int)pthread_self());
+		free(tmp_dir);
+		image=IMG_Load(filename);
+		if(image == NULL ) {
+			printd(DEBUG_HTTP,"%s is a NOT an image\n",filename);
+			free(url);
+			continue;
+		}
 
-                /* Check OpenGL compatibility */
-                if( image->format->BytesPerPixel != 4 && image->format->BytesPerPixel != 3 ) {
-                        printd(DEBUG_HTTP,"%s cannot be displayed \n",filename);
-                        SDL_FreeSurface(image);
+		/* Check OpenGL compatibility */
+		if( image->format->BytesPerPixel != 4 && image->format->BytesPerPixel != 3 ) {
+			printd(DEBUG_HTTP,"%s cannot be displayed \n",filename);
+			SDL_FreeSurface(image);
 			image=NULL;
 
-                        free(url);
-                        continue;
-                }
+			free(url);
+			continue;
+		}
 
-                free(url);
-        }
+		free(url);
+	}
 
-        return image;
+	return image;
 }
 
 /*******************************
@@ -116,17 +116,16 @@ static void * thread_routine(void * arg)
 		}
 
 		img=malloc(sizeof(img_t));
-                memset(img,0,sizeof(img_t));
-                img->surf = surf;
-                img->ratio = (double)(img->surf->w) / (double)(img->surf->h);
-                if( img->ratio > 1.0 ) {
+		memset(img,0,sizeof(img_t));
+		img->surf = surf;
+		img->ratio = (double)(img->surf->w) / (double)(img->surf->h);
+		if( img->ratio > 1.0 ) {
 			img->w = 1.0;
-                        img->h = 1.0/img->ratio;
-                }
-                else {
-                        img->w = 1.0*img->ratio;
-                        img->h = 1.0;
-                }
+			img->h = 1.0/img->ratio;
+		} else {
+			img->w = 1.0*img->ratio;
+			img->h = 1.0;
+		}
 
 		image_fifo_push( image_fifo, img );
 	}
@@ -150,36 +149,36 @@ loader_t * loader_init(int engine, int max_img, char * keyword, int size, int fi
 	loader->image_fifo = image_fifo_init(max_img);
 
 	switch( engine ) {
-		case ENG_TEST:
-			test_engine_init( loader->engine, keyword, size, filter);
-			break;
+	case ENG_TEST:
+		test_engine_init( loader->engine, keyword, size, filter);
+		break;
 
-		case ENG_YANDEX:
-			yandex_engine_init( loader->engine, keyword, size, filter);
-			break;
+	case ENG_YANDEX:
+		yandex_engine_init( loader->engine, keyword, size, filter);
+		break;
 
-		case ENG_FILE:
-			file_engine_init( loader->engine, keyword, size, filter);
-			break;
+	case ENG_FILE:
+		file_engine_init( loader->engine, keyword, size, filter);
+		break;
 
-		case ENG_WIKIMEDIA:
-			wikimedia_engine_init( loader->engine, keyword, size, filter);
-			break;
+	case ENG_WIKIMEDIA:
+		wikimedia_engine_init( loader->engine, keyword, size, filter);
+		break;
 
-		case ENG_DEVIANTART:
-			deviantart_engine_init( loader->engine, keyword, size, filter);
-			break;
+	case ENG_DEVIANTART:
+		deviantart_engine_init( loader->engine, keyword, size, filter);
+		break;
 
-		default:
-                        printd(DEBUG_ERROR,"Engine %d does not exist\n",engine);
-			return NULL;
+	default:
+		printd(DEBUG_ERROR,"Engine %d does not exist\n",engine);
+		return NULL;
 	}
 
-        loader->thread_array = malloc( NUM_THREAD * sizeof(pthread_t) );
+	loader->thread_array = malloc( NUM_THREAD * sizeof(pthread_t) );
 
-        for(i=0;i<NUM_THREAD;i++) {
-                pthread_create(&loader->thread_array[i],NULL,thread_routine,loader);
-        }
+	for(i=0; i<NUM_THREAD; i++) {
+		pthread_create(&loader->thread_array[i],NULL,thread_routine,loader);
+	}
 
 	return loader;
 }
@@ -189,13 +188,13 @@ void loader_delete(loader_t * loader)
 {
 	int i;
 
-	for(i=0;i<NUM_THREAD;i++) {
-                pthread_cancel(loader->thread_array[i]);
-        }
+	for(i=0; i<NUM_THREAD; i++) {
+		pthread_cancel(loader->thread_array[i]);
+	}
 
-	for(i=0;i<NUM_THREAD;i++) {
-                pthread_join(loader->thread_array[i],NULL);
-        }
+	for(i=0; i<NUM_THREAD; i++) {
+		pthread_join(loader->thread_array[i],NULL);
+	}
 
 	loader->engine->engine_destroy(loader->engine);
 
