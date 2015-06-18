@@ -102,9 +102,6 @@ int web_to_memory( char * url, network_page_t * page)
 	struct timespec t;
 	char curl_error_buffer[CURL_ERROR_SIZE];
 
-	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
-	t.tv_nsec = 0;
-
 	easyhandle = curl_easy_init();
 	if(easyhandle == NULL) {
 		printd(DEBUG_ERROR,"curl_easy_init failed: %s",curl_error_buffer);
@@ -131,12 +128,16 @@ int web_to_memory( char * url, network_page_t * page)
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 	curl_easy_setopt(easyhandle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_USERAGENT, "web-shooter/1.0");
+	curl_easy_setopt(easyhandle, CURLOPT_VERBOSE, 1L);
 
 	/* experimental */
 	//curl_easy_setopt(easyhandle, CURLOPT_AUTOREFERER, 1);
 	//curl_easy_setopt(easyhandle, CURLOPT_TRANSFER_ENCODING, 1);
 
 	pthread_create(&thread,NULL,async_perform,easyhandle);
+
+	clock_gettime(CLOCK_REALTIME, &t);
+	t.tv_sec += DEF_HTTP_TIMEOUT + 2;
 	err = pthread_timedjoin_np(thread,&thread_ret,&t);
 	if(err) {
 		pthread_cancel(thread);
@@ -174,9 +175,6 @@ int web_to_disk( char * url)
 	char curl_error_buffer[CURL_ERROR_SIZE];
 	char * tmp_dir;
 
-	t.tv_sec = time(NULL) + DEF_HTTP_TIMEOUT;
-	t.tv_nsec = 0;
-
 	tmp_dir = get_tmp_dir();
 	sprintf(filename,"%s/%s.%d",tmp_dir,TMP_FILE,(int)pthread_self());
 	free(tmp_dir);
@@ -209,6 +207,9 @@ int web_to_disk( char * url)
 	curl_easy_setopt(easyhandle, CURLOPT_USERAGENT, "web-shooter/1.0");
 
 	pthread_create(&thread,NULL,async_perform,easyhandle);
+
+	clock_gettime(CLOCK_REALTIME, &t);
+	t.tv_sec += DEF_HTTP_TIMEOUT + 2;
 	err = pthread_timedjoin_np(thread,&thread_ret,&t);
 	if(err) {
 		pthread_cancel(thread);
