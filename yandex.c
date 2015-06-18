@@ -38,6 +38,8 @@
 #include "loader.h"
 #include <pthread.h>
 
+#define TIME_BETWEEN_REQUEST 5
+
 static char * size_string[SIZE_NUM] = {
 	"small"
 	,"medium"
@@ -58,6 +60,8 @@ typedef struct internal {
 	char * filter;
 	pthread_mutex_t page_mutex;
 } internal_t;
+
+time_t time_last_request;
 
 /*******************************
   create_url
@@ -84,7 +88,7 @@ static char * create_url(internal_t * internal)
 	}
 	word[j]=0;
 
-	sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",internal->page_num*5,word,internal->image_size,internal->filter);
+	sprintf(buf,"https://www.yandex.com/images/search?p=%d&text=%s&isize=%s%s",internal->page_num*5,word,internal->image_size,internal->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
 	url = strdup(buf);
 
@@ -98,12 +102,21 @@ static char * create_url(internal_t * internal)
 static int  get_response_page(internal_t * internal)
 {
 	char * url;
+	time_t time_current;
 
 	url = create_url(internal);
 	if(url == NULL) {
 		printd(DEBUG_ERROR,"Can't get URL from Yandex engine\n");
 		return -1;
 	}
+
+	time_current = time(NULL);
+	while( time_current < time_last_request + TIME_BETWEEN_REQUEST ) {
+		printd(DEBUG_ERROR,"Waiting a bit before next request\n");
+		usleep(1000000);
+		time_current = time(NULL);
+	}
+	time_last_request = time(NULL);
 
 	if ( web_to_memory(url,internal->page) == -1 ) {
 		printd(DEBUG_ERROR,"web_to_memory error\n");
@@ -220,7 +233,6 @@ static char * engine_get_url(engine_t * engine)
 		url =  parse_response_page(internal);
 		if( url == NULL ) {
 			printd(DEBUG_PAGE | DEBUG_HTTP,"No more URL for keyword \"%s\" on page %d\n",internal->keyword,internal->page_num);
-			internal->page_num++;
 			free(internal->page->data);
 			internal->page->data=NULL;
 			internal->page->size=0;
@@ -259,6 +271,9 @@ int yandex_engine_init(engine_t * engine,const char * keyword,int size,int filte
 
 	engine->engine_destroy=engine_destroy;
 	engine->engine_get_url=engine_get_url;
+
+	time_last_request = time(NULL);
+	time_last_request -= TIME_BETWEEN_REQUEST;
 
 	return 0;
 }
