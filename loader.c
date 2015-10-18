@@ -43,6 +43,7 @@
 #include "file_engine.h"
 #include "wikimedia_engine.h"
 #include "deviantart_engine.h"
+#include "framabee.h"
 #include <pthread.h>
 
 /*******************************
@@ -167,6 +168,10 @@ loader_t * loader_init(int engine, int max_img, char * keyword, int size, int fi
 
 	case ENG_DEVIANTART:
 		deviantart_engine_init( loader->engine, keyword, size, filter);
+		break;
+
+	case ENG_FRAMABEE:
+		framabee_engine_init( loader->engine, keyword, size, filter);
 		break;
 
 	default:

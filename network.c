@@ -228,6 +228,7 @@ int web_to_disk( char * url)
 	curl_easy_cleanup(easyhandle);
 
 	close(fd);
+	printd(DEBUG_ERROR,"%s ==> %s OK\n",url,filename);
 
 	return 0;
 }

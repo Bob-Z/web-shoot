@@ -122,7 +122,8 @@ void background_init(char * keyword,int filter)
 //	loader = loader_init(ENG_TEST,8,keyword,SIZE_LARGE,filter);
 //	loader = loader_init(ENG_FILE,8,keyword,SIZE_LARGE,filter);
 //	loader = loader_init(ENG_WIKIMEDIA,8,keyword,SIZE_LARGE,filter);
-	loader = loader_init(ENG_DEVIANTART,8,keyword,SIZE_LARGE,filter);
+//	loader = loader_init(ENG_DEVIANTART,8,keyword,SIZE_LARGE,filter);
+	loader = loader_init(ENG_FRAMABEE,8,keyword,SIZE_LARGE,filter);
 }
 
 void background_draw(int pixel_ref_size, double screen_ratio)
