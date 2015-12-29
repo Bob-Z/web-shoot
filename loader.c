@@ -57,7 +57,6 @@ static SDL_Surface * fetch_image(engine_t *engine)
 	char * url;
 	int err;
 	char filename[SMALL_BUF];
-	char * tmp_dir;
 
 	while( image == NULL ) {
 		url =  engine->engine_get_url(engine);
@@ -66,7 +65,7 @@ static SDL_Surface * fetch_image(engine_t *engine)
 		}
 
 		/* Download the resource */
-		err = web_to_disk(url);
+		err = web_to_disk(url,filename);
 		if( err == -1) {
 			printd(DEBUG_ERROR,"Error fetching %s\n", url);
 			free(url);
@@ -74,13 +73,11 @@ static SDL_Surface * fetch_image(engine_t *engine)
 		}
 
 		/* Read image */
-		tmp_dir = get_tmp_dir();
-		sprintf(filename,"%s/%s.%d",tmp_dir,TMP_FILE,(int)pthread_self());
-		free(tmp_dir);
 		image=IMG_Load(filename);
 		if(image == NULL ) {
-			printd(DEBUG_HTTP,"%s is a NOT an image\n",filename);
+			printd(DEBUG_HTTP,"%s is NOT an image\n",filename);
 			free(url);
+			unlink(filename);
 			continue;
 		}
 

@@ -44,7 +44,7 @@ int fss;
 
 int fullscreen = 0;
 
-const char optstring[] = "?nfsb:c:p:";
+const char optstring[] = "?nfsb:c:p:B:";
 const struct option longopts[] = {
 	{ "nofilter",no_argument,NULL,'n' },
 	{ "fullscreen",no_argument,NULL,'f' },
@@ -52,6 +52,7 @@ const struct option longopts[] = {
 	{ "background",required_argument,NULL,'b' },
 	{ "cpu",required_argument,NULL,'c' },
 	{ "player",required_argument,NULL,'p' },
+	{ "backup",required_argument,NULL,'B' },
 	{NULL,0,NULL,0}
 };
 
@@ -69,6 +70,8 @@ int main(int argc, char **argv)
 	int filter = FILTER_ON;
 	int opt_ret;
 	int slideshow = 0;
+
+	backup_dir = NULL;
 
 	srand(time(NULL));
 
@@ -92,6 +95,9 @@ int main(int argc, char **argv)
 		case 'p':
 			keyword_pl = strdup(optarg);
 			break;
+		case 'B':
+			backup_dir = strdup(optarg);
+			break;
 		default:
 			printf("HELP:\n\n");
 			printf("-f : start fullscreen\n");
@@ -102,6 +108,7 @@ int main(int argc, char **argv)
 			printf("\nIn game mode : \n");
 			printf("-c : cpu controlled sprites theme (or path)\n");
 			printf("-p : player sprites theme (or path)\n");
+			printf("-B : backup path\n");
 			exit(0);
 		}
 	}
@@ -150,7 +157,6 @@ int main(int argc, char **argv)
 		fss = window_h;
 	}
 
-	/* On fixe le mode d'affichage */
 	SDL_SetVideoMode(window_w, window_h, 32, SDL_OPENGL | SDL_GL_DOUBLEBUFFER | SDL_RESIZABLE | fullscreen);
 
 	screen_ratio = opengl_init(window_w,window_h);

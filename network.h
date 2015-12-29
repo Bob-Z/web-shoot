@@ -25,4 +25,4 @@ typedef struct network_page {
 } network_page_t;
 
 int web_to_memory( char * url, network_page_t * page);
-int web_to_disk( char * url);
+int web_to_disk(char * url,char * filename);

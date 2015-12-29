@@ -36,4 +36,6 @@
 
 #define NUM_THREAD (8)
 
+char * backup_dir;
+
 #endif

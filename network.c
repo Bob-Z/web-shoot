@@ -162,22 +162,28 @@ int web_to_memory( char * url, network_page_t * page)
 return -1 on error
 return 0 on success
  ******************************/
-int web_to_disk( char * url)
+int web_to_disk(char * url,char * filename)
 {
 	CURL * easyhandle;
 	char * proxy;
 	int err;
 	int fd;
-	char filename[1024];
 	pthread_t thread;
 	void * thread_ret;
 	struct timespec t;
 	char curl_error_buffer[CURL_ERROR_SIZE];
 	char * tmp_dir;
+	static long count = 0;
 
-	tmp_dir = get_tmp_dir();
-	sprintf(filename,"%s/%s.%d",tmp_dir,TMP_FILE,(int)pthread_self());
-	free(tmp_dir);
+	if(backup_dir) {
+		sprintf(filename,"%s/%s.%d.%ld",backup_dir,TMP_FILE,(int)pthread_self(),count);
+		count++;
+	}
+	else {
+		tmp_dir = get_tmp_dir();
+		sprintf(filename,"%s/%s.%d",tmp_dir,TMP_FILE,(int)pthread_self());
+                        free(tmp_dir);
+	}
 
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
 	if( fd == -1 ) {
