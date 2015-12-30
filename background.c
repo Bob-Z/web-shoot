@@ -128,7 +128,7 @@ int background_init(char * engine,char * keyword,int filter)
 			return RET_FAIL;
 		}
 	}
-	loader = loader_init(engine_num,8,keyword,SIZE_LARGE,filter);
+	loader = loader_init(engine_num,DEF_MAX_IMAGE,keyword,SIZE_LARGE,filter);
 
 	return RET_OK;
 }

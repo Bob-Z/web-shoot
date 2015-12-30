@@ -37,7 +37,8 @@
 #define SMALL_BUF 1024
 #define LARGE_BUF 10240
 
-#define NUM_THREAD (8)
+#define DEF_MAX_IMAGE (8)
+#define NUM_THREAD DEF_MAX_IMAGE
 
 #define ZCHAR	(0)
 
