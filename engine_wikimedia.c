@@ -182,6 +182,8 @@ int wikimedia_engine_init(engine_t * engine,const char * keyword,int size,int fi
 {
 	internal_t * internal;
 
+	printf("Wikimedia engine\n");
+
 	internal = malloc(sizeof(internal_t));
 	memset(internal,0,sizeof(internal_t));
 

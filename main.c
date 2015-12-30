@@ -126,14 +126,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if(keyword_bg == NULL) {
-		keyword_bg = readline("Background: ");
-		if(keyword_bg[0] == 0 ) {
-			free(keyword_bg);
-			keyword_bg = "nothing";
-		}
-	}
-
 	if(!slideshow) {
 		if(keyword_sp == NULL ) {
 			keyword_sp = readline("cpu: ");

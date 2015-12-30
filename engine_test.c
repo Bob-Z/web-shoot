@@ -63,6 +63,8 @@ return 0 if no error
 ******************************/
 int test_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 {
+	printf("Test engine\n");
+
 	engine->engine_destroy=engine_destroy;
 	engine->engine_get_url=engine_get_url;
 

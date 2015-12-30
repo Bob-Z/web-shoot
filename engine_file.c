@@ -39,7 +39,8 @@
 #include <pthread.h>
 #include <dirent.h>
 #include <unistd.h>
-
+#include <readline/readline.h>
+#include <readline/history.h>
 
 typedef struct internal {
 	char * path;
@@ -158,11 +159,22 @@ int file_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 {
 	internal_t * internal;
 
+	printf("File engine\n");
+
 	internal = malloc(sizeof(internal_t));
 	memset(internal,0,sizeof(internal_t));
 	engine->internal = internal;
 
-	internal->path = strdup(keyword);
+	if(keyword == NULL) {
+		internal->path = readline("Enter path: ");
+		if(internal->path[0] == 0 ) {
+			free(internal->path);
+			internal->path = getenv("HOME");
+		}
+	}
+	else {
+		internal->path = strdup(keyword);
+	}
 
 	pthread_mutex_init(&internal->engine_mutex,NULL);
 

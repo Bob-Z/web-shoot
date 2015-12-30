@@ -214,6 +214,8 @@ int deviantart_engine_init(engine_t * engine,const char * keyword,int size,int f
 {
 	internal_t * internal;
 
+	printf("DeviantArt engine\n");
+
 	internal = malloc(sizeof(internal_t));
 	memset(internal,0,sizeof(internal_t));
 

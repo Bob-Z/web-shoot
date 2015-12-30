@@ -37,6 +37,8 @@
 #include "network.h"
 #include "loader.h"
 #include <pthread.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #define FIRST_PAGE (1)
 
@@ -229,6 +231,8 @@ int qwant_engine_init(engine_t * engine,const char * keyword,int size,int filter
 {
 	internal_t * internal;
 
+        printf("Qwant engine\n");
+
 	internal = malloc(sizeof(internal_t));
 	memset(internal,0,sizeof(internal_t));
 
@@ -240,7 +244,16 @@ int qwant_engine_init(engine_t * engine,const char * keyword,int size,int filter
 	internal->page_num=FIRST_PAGE;
 	internal->read_index=0;
 
-	internal->keyword=strdup(keyword);
+        if(keyword == NULL) {
+                internal->keyword = readline("Enter key word: ");
+                if(internal->keyword[0] == 0 ) {
+                        free(internal->keyword);
+                        internal->keyword = getenv("USER");
+                }
+        }
+        else {
+                internal->keyword = strdup(keyword);
+        }
 
 	pthread_mutex_init(&internal->page_mutex,NULL);
 
