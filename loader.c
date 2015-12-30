@@ -38,13 +38,13 @@
 #include "engine.h"
 #include "loader.h"
 #include "misc.h"
-#include "yandex.h"
-#include "test_engine.h"
-#include "file_engine.h"
-#include "wikimedia_engine.h"
-#include "deviantart_engine.h"
-#include "framabee.h"
-#include "qwant_engine.h"
+#include "engine_yandex.h"
+#include "engine_test.h"
+#include "engine_file.h"
+#include "engine_wikimedia.h"
+#include "engine_deviantart.h"
+#include "engine_framabee.h"
+#include "engine_qwant.h"
 #include <pthread.h>
 
 /*******************************
