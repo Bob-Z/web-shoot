@@ -26,8 +26,11 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define FALSE 0
-#define TRUE 1
+#define FALSE (0)
+#define TRUE (1)
+
+#define RET_OK (0)
+#define RET_FAIL (-1)
 
 #define UNDEF_COORD (-99999)
 

@@ -111,7 +111,7 @@ static void draw_background(int pixel_ref_size, double screen_ratio)
 	x_first-=move;
 }
 
-void background_init(char * engine,char * keyword,int filter)
+int background_init(char * engine,char * keyword,int filter)
 {
 	int i;
 	unsigned int engine_num;
@@ -125,9 +125,12 @@ void background_init(char * engine,char * keyword,int filter)
 		engine_num = engine[0] - '0';
 		if( engine_num >= ENG_NUM ) {
 			printd(DEBUG_ERROR,"Unknown engine: %s\n",engine);
+			return RET_FAIL;
 		}
 	}
 	loader = loader_init(engine_num,8,keyword,SIZE_LARGE,filter);
+
+	return RET_OK;
 }
 
 void background_draw(int pixel_ref_size, double screen_ratio)

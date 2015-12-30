@@ -165,7 +165,9 @@ int main(int argc, char **argv)
 
 	screen_ratio = opengl_init(window_w,window_h);
 
-	background_init(engine,keyword_bg,filter);
+	if( background_init(engine,keyword_bg,filter) == RET_FAIL) {
+		return 1;
+	}
 #if 0
 	if(!slideshow) {
 		sprite_init(keyword_pl,keyword_sp,filter);

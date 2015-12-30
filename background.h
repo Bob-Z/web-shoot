@@ -17,5 +17,5 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-void background_init(char * engine,char * keyword,int filter);
+int background_init(char * engine,char * keyword,int filter);
 void background_draw(int pixel_ref_zie, double screen_ratio);
