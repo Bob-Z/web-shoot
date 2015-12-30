@@ -43,7 +43,7 @@ int fss;
 
 int fullscreen = 0;
 
-const char optstring[] = "?nfsb:c:p:B:";
+const char optstring[] = "?nfsb:c:p:B:e:";
 const struct option longopts[] = {
 	{ "nofilter",no_argument,NULL,'n' },
 	{ "fullscreen",no_argument,NULL,'f' },
@@ -52,6 +52,7 @@ const struct option longopts[] = {
 	{ "cpu",required_argument,NULL,'c' },
 	{ "player",required_argument,NULL,'p' },
 	{ "backup",required_argument,NULL,'B' },
+	{ "engine",required_argument,NULL,'e' },
 	{NULL,0,NULL,0}
 };
 
@@ -63,6 +64,7 @@ int main(int argc, char **argv)
 	char * keyword_bg = NULL;
 	char * keyword_sp = NULL;
 	char * keyword_pl = NULL;
+	char * engine = NULL;
 	Uint8 *keystate;
 	int fullscreen_w = 0;
 	int fullscreen_h = 0;
@@ -97,6 +99,9 @@ int main(int argc, char **argv)
 		case 'B':
 			backup_dir = strdup(optarg);
 			break;
+		case 'e':
+			engine = strdup(optarg);
+			break;
 		default:
 			printf("HELP:\n\n");
 			printf("-f : start fullscreen\n");
@@ -108,10 +113,10 @@ int main(int argc, char **argv)
 			printf("-c : cpu controlled sprites theme (or path)\n");
 			printf("-p : player sprites theme (or path)\n");
 			printf("-B : backup path\n");
+			printf("-e : select engine: 0- DeviantArt, 1- file, 2- Framabee, 3- Qwant, 4- Wikimedia, 5- Yandex\n");
 			exit(0);
 		}
 	}
-
 
 	fss = window_h;
 
@@ -160,7 +165,7 @@ int main(int argc, char **argv)
 
 	screen_ratio = opengl_init(window_w,window_h);
 
-	background_init(keyword_bg,filter);
+	background_init(engine,keyword_bg,filter);
 #if 0
 	if(!slideshow) {
 		sprite_init(keyword_pl,keyword_sp,filter);

@@ -111,20 +111,23 @@ static void draw_background(int pixel_ref_size, double screen_ratio)
 	x_first-=move;
 }
 
-void background_init(char * keyword,int filter)
+void background_init(char * engine,char * keyword,int filter)
 {
 	int i;
+	unsigned int engine_num;
 
 	for(i=0; i<MAX_IMG; i++) {
 		bg[i] = NULL;
 	}
-//	loader = loader_init(ENG_YANDEX,8,keyword,SIZE_LARGE,filter);
-//	loader = loader_init(ENG_TEST,8,keyword,SIZE_LARGE,filter);
-//	loader = loader_init(ENG_FILE,8,keyword,SIZE_LARGE,filter);
-//	loader = loader_init(ENG_WIKIMEDIA,8,keyword,SIZE_LARGE,filter);
-//	loader = loader_init(ENG_DEVIANTART,8,keyword,SIZE_LARGE,filter);
-//	loader = loader_init(ENG_FRAMABEE,8,keyword,SIZE_LARGE,filter);
-	loader = loader_init(ENG_QWANT,8,keyword,SIZE_LARGE,filter);
+
+	engine_num = ENG_DEVIANTART;
+	if( engine ) {
+		engine_num = engine[0] - '0';
+		if( engine_num >= ENG_NUM ) {
+			printd(DEBUG_ERROR,"Unknown engine: %s\n",engine);
+		}
+	}
+	loader = loader_init(engine_num,8,keyword,SIZE_LARGE,filter);
 }
 
 void background_draw(int pixel_ref_size, double screen_ratio)

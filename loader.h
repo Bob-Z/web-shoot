@@ -35,14 +35,14 @@ enum filter_activated {
 };
 
 enum engine_type {
-	ENG_TEST
-	,ENG_YANDEX
+	ENG_DEVIANTART=0
 	,ENG_FILE
-	,ENG_WIKIMEDIA
-	,ENG_DEVIANTART
 	,ENG_FRAMABEE
 	,ENG_QWANT
+	,ENG_WIKIMEDIA
+	,ENG_YANDEX
 	,ENG_NUM
+	,ENG_TEST
 };
 
 typedef struct loader {
