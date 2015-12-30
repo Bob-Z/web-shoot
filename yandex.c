@@ -73,20 +73,8 @@ static char * create_url(internal_t * internal)
 	char buf[1024];
 	char * url = NULL;
 	char word[1024];
-	int i;
-	int j;
 
-	j=0;
-	for(i=0; i<strlen(internal->keyword); i++) {
-		if(internal->keyword[i] == ' ') {
-			memcpy(&word[j],"%20",strlen("%20"));
-			j=j+strlen("%20");
-		} else {
-			word[j] = internal->keyword[i];
-			j++;
-		}
-	}
-	word[j]=0;
+	url_percent(internal->keyword,word);
 
 	sprintf(buf,"https://www.yandex.com/images/search?p=%d&text=%s&isize=%s%s",internal->page_num*5,word,internal->image_size,internal->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);

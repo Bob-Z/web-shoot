@@ -61,7 +61,7 @@ static char * create_url(internal_t * internal)
 
 	url_percent(internal->keyword,word);
 
-	sprintf(buf,"https://framabee.org/?q=%s&pageno=%d&category_images",word,internal->page_num);
+	sprintf(buf,"https://lite.qwant.com/?p=%d&q=%s&lang=en_gb&t=images",internal->page_num,word);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
 	url = strdup(buf);
 
@@ -106,6 +106,7 @@ static char * parse_response_page(internal_t * internal)
 	char * substring_start = NULL;
 	char * substring_end = NULL;
 	char * url = NULL;
+	char nopercent_url[LARGE_BUF];
 
 	if( internal == NULL || internal->page == NULL || internal->page->data == NULL) {
 		printd(DEBUG_ERROR,"Invalid memory block\n");
@@ -114,16 +115,14 @@ static char * parse_response_page(internal_t * internal)
 
 	substring=internal->page->data + internal->read_index;
 
-	if( internal->read_index == 0){
-		substring=strstr(internal->page->data + internal->read_index,"<div class=\"result result-images\">");
+	substring=strstr(internal->page->data + internal->read_index,"<div class=\"resultimgs\">");
 
-		if( substring == NULL ) {
-			printd(DEBUG_ERROR,"No more URL on page %d\n",internal->page_num);
-			return NULL;
-		}
+	if( substring == NULL ) {
+		printd(DEBUG_ERROR,"No more URL on page %d\n",internal->page_num);
+		return NULL;
 	}
 
-	substring=strstr(substring,"<a href=");
+	substring=strstr(substring,"?u=http");
 
 	if( substring == NULL ) {
 		printd(DEBUG_ERROR,"No more URL on page %d\n",internal->page_num);
@@ -132,9 +131,12 @@ static char * parse_response_page(internal_t * internal)
 
 	/* get the url */
 	substring_start=strstr(substring,"http");
-	substring_end = strstr(substring_start+strlen("http"),"\"");
+	substring_end = strstr(substring_start+strlen("http"),"&q=");
 
 	url = strndup(substring_start,substring_end-substring_start);
+	url_nopercent(url,nopercent_url);
+	free(url);
+	url=strdup(nopercent_url);
 	printd(DEBUG_URL,"URL: %s\n",url);
 
 	internal->read_index = substring_end - internal->page->data;
@@ -223,7 +225,7 @@ static char * engine_get_url(engine_t * engine)
  yandex_engine_init
 return 0 if no error
 ******************************/
-int framabee_engine_init(engine_t * engine,const char * keyword,int size,int filter)
+int qwant_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 {
 	internal_t * internal;
 

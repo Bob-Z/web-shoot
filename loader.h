@@ -41,6 +41,7 @@ enum engine_type {
 	,ENG_WIKIMEDIA
 	,ENG_DEVIANTART
 	,ENG_FRAMABEE
+	,ENG_QWANT
 	,ENG_NUM
 };
 

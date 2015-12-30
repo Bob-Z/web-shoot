@@ -17,30 +17,6 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#include "engine.h"
 
-#include <stdlib.h>
-#include <SDL.h>
-#include <SDL_opengl.h>
-#include <pthread.h>
-#include <semaphore.h>
-
-#define FALSE 0
-#define TRUE 1
-
-#define UNDEF_COORD (-99999)
-
-#define SMALL_BUF 1024
-#define LARGE_BUF 10240
-
-#define NUM_THREAD (8)
-
-#define ZCHAR	(0)
-
-char * backup_dir;
-
-void url_percent(const char * src, char * dst);
-void url_nopercent(const char * src, char * dst);
-
-#endif
+int qwant_engine_init(engine_t * engine,const char * keyword,int size,int filter);

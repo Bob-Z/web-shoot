@@ -31,7 +31,6 @@
 #include "background.h"
 #include "loader.h"
 
-#define UNDEF_COORD (-99999)
 const SDL_VideoInfo* video_info;
 
 int window_w = WINDOW_SIZE_X;

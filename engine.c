@@ -47,8 +47,6 @@ char * create_url(engine_t * engine)
 	char buf[1024];
 	char * url = NULL;
 	char word[1024];
-	int i;
-	int j;
 
 	if ( engine->image_request_size == NULL) {
 		engine->image_request_size = SIZE_ANY;
@@ -57,17 +55,8 @@ char * create_url(engine_t * engine)
 	if ( engine->filter == NULL ) {
 		engine->filter = FILTER_ON;
 	}
-	j=0;
-	for(i=0; i<strlen(engine->keyword); i++) {
-		if(engine->keyword[i] == ' ') {
-			memcpy(&word[j],"%20",strlen("%20"));
-			j=j+strlen("%20");
-		} else {
-			word[j] = engine->keyword[i];
-			j++;
-		}
-	}
-	word[j]=0;
+
+	url_percent(engine->keyword,word);
 
 	sprintf(buf,"https://yandex.com/images/search?p=%d&text=%s&isize=%s%s",engine->result_page_num*5,word,engine->image_request_size,engine->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
