@@ -26,7 +26,7 @@
 
 #define TMP_FILE "webshooter"
 
-#define DEF_HTTP_TIMEOUT 5
+#define DEF_HTTP_TIMEOUT 10
 
 #define WINDOW_SIZE_X 100
 #define WINDOW_SIZE_Y 100
