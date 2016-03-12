@@ -142,7 +142,7 @@ static char * engine_get_url(engine_t * engine)
 	}
 
 	url = internal->file[internal->index];
-	internal->index = (internal->index+1) % internal->num_file;
+	internal->index = random() % internal->num_file;
 
 	pthread_mutex_unlock(&internal->engine_mutex);
 
@@ -175,6 +175,8 @@ int file_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 	else {
 		internal->path = strdup(keyword);
 	}
+
+	srandom(time(NULL));
 
 	pthread_mutex_init(&internal->engine_mutex,NULL);
 
