@@ -47,6 +47,7 @@ typedef struct internal {
 	int page_num;
 	int read_index;
 	char * keyword;
+	enum filter_activated filter;
 	pthread_mutex_t page_mutex;
 } internal_t;
 
@@ -63,7 +64,7 @@ static char * create_url(internal_t * internal)
 
 	url_percent(internal->keyword,word);
 
-	sprintf(buf,"https://lite.qwant.com/?p=%d&q=%s&lang=en_gb&t=images",internal->page_num,word);
+	sprintf(buf,"https://lite.qwant.com/?p=%d&q=%s&l=en&t=images&safesearch=%d",internal->page_num,word,internal->filter);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
 	url = strdup(buf);
 
@@ -254,6 +255,11 @@ int qwant_engine_init(engine_t * engine,const char * keyword,int size,int filter
         else {
                 internal->keyword = strdup(keyword);
         }
+
+	internal->filter = 1;
+	if(filter == FILTER_OFF) {
+		internal->filter = 0;
+	}
 
 	pthread_mutex_init(&internal->page_mutex,NULL);
 
