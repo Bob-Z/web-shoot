@@ -242,7 +242,7 @@ int yandex_engine_init(engine_t * engine,const char * keyword,int size,int filte
 {
 	internal_t * internal;
 
-        printf("Yandex engine\n");
+	printf("Yandex engine\n");
 
 	internal = malloc(sizeof(internal_t));
 	memset(internal,0,sizeof(internal_t));
@@ -255,16 +255,15 @@ int yandex_engine_init(engine_t * engine,const char * keyword,int size,int filte
 	internal->page_num=0;
 	internal->read_index=0;
 
-        if(keyword == NULL) {
-                internal->keyword = readline("Enter key word: ");
-                if(internal->keyword[0] == 0 ) {
-                        free(internal->keyword);
-                        internal->keyword = getenv("USER");
-                }
-        }
-        else {
-                internal->keyword = strdup(keyword);
-        }
+	if(keyword == NULL) {
+		internal->keyword = readline("Enter key word: ");
+		if(internal->keyword[0] == 0 ) {
+			free(internal->keyword);
+			internal->keyword = getenv("USER");
+		}
+	} else {
+		internal->keyword = strdup(keyword);
+	}
 
 	internal->image_size=size_string[size];
 	internal->filter=filter_string[filter];

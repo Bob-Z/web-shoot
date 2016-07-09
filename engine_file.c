@@ -171,8 +171,7 @@ int file_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 			free(internal->path);
 			internal->path = getenv("HOME");
 		}
-	}
-	else {
+	} else {
 		internal->path = strdup(keyword);
 	}
 

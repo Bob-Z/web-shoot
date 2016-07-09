@@ -178,11 +178,10 @@ int web_to_disk(char * url,char * filename)
 	if(backup_dir) {
 		sprintf(filename,"%s/%s.%d.%ld",backup_dir,TMP_FILE,(int)pthread_self(),count);
 		count++;
-	}
-	else {
+	} else {
 		tmp_dir = get_tmp_dir();
 		sprintf(filename,"%s/%s.%d",tmp_dir,TMP_FILE,(int)pthread_self());
-                        free(tmp_dir);
+		free(tmp_dir);
 	}
 
 	fd = open(filename,O_CREAT| O_TRUNC | O_RDWR, S_IRWXU);
