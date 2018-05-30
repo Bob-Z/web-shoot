@@ -55,7 +55,8 @@ static char * create_url(internal_t * internal)
 	char buf[1024];
 	char * url = NULL;
 
-	sprintf(buf,"http://www.deviantart.com/browse/whatshot/?offset=%d",internal->page_num*25);
+	//sprintf(buf,"https://www.deviantart.com/whatshot/?offset=%d",internal->page_num*25);
+	sprintf(buf,"https://www.deviantart.com/?offset=%d",internal->page_num*25);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
 	url = strdup(buf);
 
@@ -114,13 +115,13 @@ static char * parse_response_page(internal_t * internal)
 	}
 
 	/* get the url */
-	substring_start=strstr(substring,"img=\"http://");
+	substring_start=strstr(substring,"data-super-full-img=\"http");
 	if( substring_start == NULL ) {
 		printd(DEBUG_ERROR,"No more URL on page %d\n",internal->page_num);
 		return NULL;
 	}
 
-	substring_start += sizeof("img=\"") -1 ;
+	substring_start += sizeof("data-super-full-img=\"") -1 ;
 	substring_end = strstr(substring_start,"\"");
 
 	url = strndup(substring_start,substring_end-substring_start);
