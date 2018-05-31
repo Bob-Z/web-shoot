@@ -128,7 +128,7 @@ int web_to_memory( char * url, network_page_t * page)
 	curl_easy_setopt(easyhandle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 	curl_easy_setopt(easyhandle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(easyhandle, CURLOPT_USERAGENT, "web-shooter/1.0");
-	curl_easy_setopt(easyhandle, CURLOPT_VERBOSE, 1L);
+//	curl_easy_setopt(easyhandle, CURLOPT_VERBOSE, 1L);
 
 	/* experimental */
 	//curl_easy_setopt(easyhandle, CURLOPT_AUTOREFERER, 1);

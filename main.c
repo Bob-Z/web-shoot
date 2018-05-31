@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 			printf("-c : cpu controlled sprites theme (or path)\n");
 			printf("-p : player sprites theme (or path)\n");
 			printf("-B : backup path\n");
-			printf("-e : select engine: 0- DeviantArt, 1- file, 2- Framabee, 3- Qwant, 4- Wikimedia, 5- Yandex\n");
+			printf("-e : select engine: 0- DeviantArt, 1- file, 2- Framabee, 3- Qwant, 4- Wikimedia, 5- Yandex, 6- Vacuum\n");
 			exit(0);
 		}
 	}

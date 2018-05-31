@@ -45,6 +45,7 @@
 #include "engine_deviantart.h"
 #include "engine_framabee.h"
 #include "engine_qwant.h"
+#include "engine_vacuum.h"
 #include <pthread.h>
 
 /*******************************
@@ -174,6 +175,10 @@ loader_t * loader_init(int engine, int max_img, char * keyword, int size, int fi
 
 	case ENG_QWANT:
 		qwant_engine_init( loader->engine, keyword, size, filter);
+		break;
+
+	case ENG_VACUUM:
+		vacuum_engine_init( loader->engine, keyword);
 		break;
 
 	default:

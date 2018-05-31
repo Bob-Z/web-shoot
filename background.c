@@ -24,7 +24,7 @@
 #include <pthread.h>
 #include "loader.h"
 
-#define MAX_IMG (8)
+#define MAX_IMG (20)
 
 static loader_t * loader;
 static img_t * bg[MAX_IMG];

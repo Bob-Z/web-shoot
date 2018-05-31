@@ -22,6 +22,6 @@ INCLUDE_DIRECTORIES(${SDL_INCLUDE_DIRS} ${SDLIMAGE_INCLUDE_DIR})
 include_directories(/usr/include/readline)
 
 
-ADD_EXECUTABLE(${PROJECT_NAME} background.c engine_deviantart.c engine_qwant.c engine_yandex.c main.c opengl.c common.c engine_file.c engine_test.c image_fifo.c misc.c debug.c engine_framabee.c engine_wikimedia.c loader.c network.c)
+ADD_EXECUTABLE(${PROJECT_NAME} background.c engine_deviantart.c engine_qwant.c engine_yandex.c main.c opengl.c common.c engine_file.c engine_test.c image_fifo.c misc.c debug.c engine_framabee.c engine_wikimedia.c engine_vacuum.c loader.c network.c)
 
 TARGET_LINK_LIBRARIES (${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${CURL_LIBRARIES} ${SDL_LIBRARIES} ${SDLIMAGE_LIBRARIES} ${OPENGL_LIBRARIES} readline)
