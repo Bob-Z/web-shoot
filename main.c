@@ -223,7 +223,7 @@ int main(int argc, char **argv)
 #endif
 					break;
 				default:
-					printd(DEBUG_SDL,"Une touche à été pressée.\n");
+					printd(DEBUG_SDL,"Key pressed\n");
 				}
 				break;
 
