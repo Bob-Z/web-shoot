@@ -1,6 +1,6 @@
 /*
    Web-shooter is a shoot them up game with random graphics.
-   Copyright (C) 2013-2015 carabobz@gmail.com
+   Copyright (C) 2013-2018 carabobz@gmail.com
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,16 +39,17 @@
 #include <pthread.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <string>
 
 #define TIME_BETWEEN_REQUEST 5
 
-static char * size_string[SIZE_NUM] = {
+static std::string size_string[SIZE_NUM] = {
 	"small"
 	,"medium"
 	,"large"
 };
 
-static char * filter_string[FILTER_NUM] = {
+static std::string filter_string[FILTER_NUM] = {
 	"&ncrnd=5290"
 	,"&ncrnd=9763"
 };
@@ -57,9 +58,9 @@ typedef struct internal {
 	network_page_t * page;
 	int page_num;
 	int read_index;
-	char * image_size;
+	const char * image_size;
 	char * keyword;
-	char * filter;
+	const char * filter;
 	pthread_mutex_t page_mutex;
 } internal_t;
 
@@ -194,7 +195,7 @@ static char * engine_get_url(engine_t * engine)
 	int first_page = FALSE;
 	char * url = NULL;
 	int res;
-	internal_t * internal = engine->internal;
+	internal_t * internal = static_cast<internal_t*>(engine->internal);
 
 	pthread_mutex_lock(&internal->page_mutex);
 
@@ -244,10 +245,10 @@ int yandex_engine_init(engine_t * engine,const char * keyword,int size,int filte
 
 	printf("Yandex engine\n");
 
-	internal = malloc(sizeof(internal_t));
+	internal = static_cast<internal_t*>(malloc(sizeof(internal_t)));
 	memset(internal,0,sizeof(internal_t));
 
-	internal->page = malloc(sizeof(network_page_t));
+	internal->page = static_cast<network_page_t*>(malloc(sizeof(network_page_t)));
 	memset(internal->page,0,sizeof(network_page_t));
 
 	engine->internal = internal;
@@ -265,8 +266,8 @@ int yandex_engine_init(engine_t * engine,const char * keyword,int size,int filte
 		internal->keyword = strdup(keyword);
 	}
 
-	internal->image_size=size_string[size];
-	internal->filter=filter_string[filter];
+	internal->image_size=size_string[size].c_str();
+	internal->filter=filter_string[filter].c_str();
 
 	pthread_mutex_init(&internal->page_mutex,NULL);
 

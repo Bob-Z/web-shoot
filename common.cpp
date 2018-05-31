@@ -25,7 +25,9 @@
 #define ESC_CODE 1
 #define NO_ESC_CODE 0
 
-char * codec[NUM_CODEC][2]= {
+char * backup_dir;
+
+const char * codec[NUM_CODEC][2]= {
 	{ " ", "%20" }
 	,{ "!", "%21" }
 	,{ "\"", "%22" }
@@ -155,5 +157,15 @@ void url_nopercent(const char * src, char * dst)
 		}
 	}
 	dst[di] = ZCHAR;
+}
+
+char * get_backup_dir()
+{
+	return backup_dir;
+}
+
+void set_backup_dir(char * dir)
+{
+	backup_dir = dir;
 }
 

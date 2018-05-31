@@ -184,7 +184,7 @@ static char * engine_get_url(engine_t * engine)
 	int first_page = FALSE;
 	char * url = NULL;
 	int res;
-	internal_t * internal = engine->internal;
+	internal_t * internal = static_cast<internal_t*>(engine->internal);
 
 	pthread_mutex_lock(&internal->page_mutex);
 
@@ -234,10 +234,10 @@ int qwant_engine_init(engine_t * engine,const char * keyword,int size,int filter
 
 	printf("Qwant engine\n");
 
-	internal = malloc(sizeof(internal_t));
+	internal = static_cast<internal_t*>(malloc(sizeof(internal_t)));
 	memset(internal,0,sizeof(internal_t));
 
-	internal->page = malloc(sizeof(network_page_t));
+	internal->page = static_cast<network_page_t*>(malloc(sizeof(network_page_t)));
 	memset(internal->page,0,sizeof(network_page_t));
 
 	engine->internal = internal;
@@ -255,9 +255,9 @@ int qwant_engine_init(engine_t * engine,const char * keyword,int size,int filter
 		internal->keyword = strdup(keyword);
 	}
 
-	internal->filter = 1;
+	internal->filter = FILTER_ON;
 	if(filter == FILTER_OFF) {
-		internal->filter = 0;
+		internal->filter = FILTER_OFF;
 	}
 
 	pthread_mutex_init(&internal->page_mutex,NULL);

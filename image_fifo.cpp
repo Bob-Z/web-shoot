@@ -47,10 +47,10 @@ image_fifo_t * image_fifo_init(int max_img)
 {
 	image_fifo_t * fifo = NULL;
 
-	fifo = malloc(sizeof(image_fifo_t));
+	fifo = static_cast<image_fifo_t*>(malloc(sizeof(image_fifo_t)));
 	memset(fifo,0,sizeof(image_fifo_t));
 
-	fifo->image_array = malloc(max_img*sizeof(img_t *));
+	fifo->image_array = static_cast<img_t**>(malloc(max_img*sizeof(img_t *)));
 	memset(fifo->image_array,0,max_img*sizeof(img_t *));
 	fifo->image_array_size = max_img;
 

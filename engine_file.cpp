@@ -84,7 +84,7 @@ int scan_disk(internal_t * internal,char * path)
 		}
 		sprintf(buf,"%s/%s",path,e->d_name);
 		internal->num_file++;
-		internal->file = realloc(internal->file,internal->num_file*sizeof(char *));
+		internal->file = static_cast<char**>(realloc(internal->file,internal->num_file*sizeof(char *)));
 		internal->file[internal->num_file-1] = strdup(buf);
 	}
 
@@ -161,7 +161,7 @@ int file_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 
 	printf("File engine\n");
 
-	internal = malloc(sizeof(internal_t));
+	internal = static_cast<internal_t*>(malloc(sizeof(internal_t)));
 	memset(internal,0,sizeof(internal_t));
 	engine->internal = internal;
 

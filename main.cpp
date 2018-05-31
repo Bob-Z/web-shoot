@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 	int opt_ret;
 	int slideshow = 0;
 
-	backup_dir = NULL;
+	set_backup_dir(nullptr);
 
 	srand(time(NULL));
 
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 			keyword_pl = strdup(optarg);
 			break;
 		case 'B':
-			backup_dir = strdup(optarg);
+			set_backup_dir(strdup(optarg));
 			break;
 		case 'e':
 			engine = strdup(optarg);
@@ -131,14 +131,14 @@ int main(int argc, char **argv)
 			keyword_sp = readline("cpu: ");
 			if(keyword_sp[0] == 0 ) {
 				free(keyword_sp);
-				keyword_sp = "nothing";
+				keyword_sp = strdup("nothing");
 			}
 		}
 		if(keyword_pl == NULL ) {
 			keyword_pl = readline("player: ");
 			if(keyword_pl[0] == 0 ) {
 				free(keyword_pl);
-				keyword_pl = "nothing";
+				keyword_pl = strdup("nothing");
 			}
 		}
 	}

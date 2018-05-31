@@ -37,9 +37,16 @@
 #include "network.h"
 #include "loader.h"
 #include <pthread.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#define FIRST_PAGE (1)
 
 typedef struct internal {
 	network_page_t * page;
+	int page_num;
+	int read_index;
+	char * keyword;
 	pthread_mutex_t page_mutex;
 } internal_t;
 
@@ -52,8 +59,11 @@ static char * create_url(internal_t * internal)
 {
 	char buf[1024];
 	char * url = NULL;
+	char word[1024];
 
-	sprintf(buf,"http://commons.wikimedia.org/wiki/Special:Random/File");
+	url_percent(internal->keyword,word);
+
+	sprintf(buf,"https://framabee.org/?q=%s&pageno=%d&category_images",word,internal->page_num);
 	printd(DEBUG_HTTP,"Creating URL : %s\n",buf);
 	url = strdup(buf);
 
@@ -70,7 +80,7 @@ static int  get_response_page(internal_t * internal)
 
 	url = create_url(internal);
 	if(url == NULL) {
-		printd(DEBUG_ERROR,"Can't get URL from Wikimedia engine\n");
+		printd(DEBUG_ERROR,"Can't get URL from Yandex engine\n");
 		return -1;
 	}
 
@@ -81,6 +91,8 @@ static int  get_response_page(internal_t * internal)
 	}
 
 	free(url);
+
+	internal->page_num++;
 
 	return 0;
 }
@@ -93,60 +105,42 @@ return string MUST be freed
 static char * parse_response_page(internal_t * internal)
 {
 	char * substring = NULL;
+	char * substring_start = NULL;
 	char * substring_end = NULL;
 	char * url = NULL;
-	char buf[SMALL_BUF];
 
 	if( internal == NULL || internal->page == NULL || internal->page->data == NULL) {
 		printd(DEBUG_ERROR,"Invalid memory block\n");
 		return 0;
 	}
 
-	substring=strstr(internal->page->data,"upload.wikimedia.org");
+	substring=internal->page->data + internal->read_index;
+
+	if( internal->read_index == 0) {
+		substring=strstr(internal->page->data + internal->read_index,"<div class=\"result result-images\">");
+
+		if( substring == NULL ) {
+			printd(DEBUG_ERROR,"No more URL on page %d\n",internal->page_num);
+			return NULL;
+		}
+	}
+
+	substring=strstr(substring,"<a href=");
 
 	if( substring == NULL ) {
-		printd(DEBUG_ERROR,"No more URL on this page\n");
+		printd(DEBUG_ERROR,"No more URL on page %d\n",internal->page_num);
 		return NULL;
 	}
 
 	/* get the url */
-	substring_end = strstr(substring,"\">");
+	substring_start=strstr(substring,"http");
+	substring_end = strstr(substring_start+strlen("http"),"\"");
 
-	url = strndup(substring,substring_end-substring);
-	snprintf(buf,sizeof(buf),"http://%s",url);
-	printd(DEBUG_URL,"URL: %s\n",buf);
+	url = strndup(substring_start,substring_end-substring_start);
+	printd(DEBUG_URL,"URL: %s\n",url);
 
-	return url;
-}
+	internal->read_index = substring_end - internal->page->data;
 
-/*******************************
-  engine_get_url
-
-Return string MUST be freed
- ******************************/
-static char * engine_get_url(engine_t * engine)
-{
-	char * url = NULL;
-	int res;
-	internal_t * internal = engine->internal;
-
-	pthread_mutex_lock(&internal->page_mutex);
-
-	while( url == NULL ) {
-		res = get_response_page(internal);
-		if( res == -1 || internal->page->data == NULL) {
-			printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result, starting back\n");
-			continue;
-		}
-
-		url =  parse_response_page(internal);
-
-		if( url == NULL ) {
-			printd(DEBUG_PAGE | DEBUG_HTTP,"No URL in this page\n");
-		}
-	}
-
-	pthread_mutex_unlock(&internal->page_mutex);
 	return url;
 }
 
@@ -168,29 +162,95 @@ static int engine_destroy(engine_t * engine)
 			free(internal->page);
 		}
 
+		if(internal->keyword) {
+			free(internal->keyword);
+		}
 		free(internal);
 	}
 
 	return 0;
 }
 
+/*******************************
+  engine_get_url
+
+Return string MUST be freed
+ ******************************/
+static char * engine_get_url(engine_t * engine)
+{
+	int first_page = FALSE;
+	char * url = NULL;
+	int res;
+	internal_t * internal = static_cast<internal_t*>(engine->internal);
+
+	pthread_mutex_lock(&internal->page_mutex);
+
+	while( url == NULL ) {
+		while( internal->page->data == NULL ) {
+			printd(DEBUG_PAGE | DEBUG_HTTP,"Reading result page %d for keyword \"%s\"\n",internal->page_num,internal->keyword);
+			res = get_response_page(internal);
+			if( res == -1 || internal->page->data == NULL) {
+				printd(DEBUG_PAGE | DEBUG_HTTP,"Can not get result page %d for keyword \"%s\", starting back\n",internal->page_num,internal->keyword);
+
+				internal->read_index = 0;
+				internal->page_num = FIRST_PAGE;
+
+				if (first_page == TRUE) {
+					printd(DEBUG_PAGE | DEBUG_HTTP,"No URL for keyword \"%s\"\n",internal->keyword);
+					pthread_mutex_unlock(&internal->page_mutex);
+					return NULL;
+				}
+
+				first_page = TRUE;
+			} else {
+				printd(DEBUG_PAGE | DEBUG_HTTP,"Got result page %d for keyword \"%s\"\n",internal->page_num-1,internal->keyword);
+			}
+		}
+
+		url =  parse_response_page(internal);
+		if( url == NULL ) {
+			printd(DEBUG_PAGE | DEBUG_HTTP,"No more URL for keyword \"%s\" on page %d\n",internal->keyword,internal->page_num);
+			free(internal->page->data);
+			internal->page->data=NULL;
+			internal->page->size=0;
+			internal->read_index=0;
+		}
+	}
+
+	pthread_mutex_unlock(&internal->page_mutex);
+	return url;
+}
+
 /******************************
- wikimedia_engine_init
+ yandex_engine_init
 return 0 if no error
 ******************************/
-int wikimedia_engine_init(engine_t * engine,const char * keyword,int size,int filter)
+int framabee_engine_init(engine_t * engine,const char * keyword,int size,int filter)
 {
 	internal_t * internal;
 
-	printf("Wikimedia engine\n");
+	printf("Framabee engine\n");
 
-	internal = malloc(sizeof(internal_t));
+	internal = static_cast<internal_t*>(malloc(sizeof(internal_t)));
 	memset(internal,0,sizeof(internal_t));
 
-	internal->page = malloc(sizeof(network_page_t));
+	internal->page = static_cast<network_page_t*>(malloc(sizeof(network_page_t)));
 	memset(internal->page,0,sizeof(network_page_t));
 
 	engine->internal = internal;
+
+	internal->page_num=FIRST_PAGE;
+	internal->read_index=0;
+
+	if(keyword == NULL) {
+		internal->keyword = readline("Enter key word: ");
+		if(internal->keyword[0] == 0 ) {
+			free(internal->keyword);
+			internal->keyword = getenv("USER");
+		}
+	} else {
+		internal->keyword = strdup(keyword);
+	}
 
 	pthread_mutex_init(&internal->page_mutex,NULL);
 

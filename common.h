@@ -42,9 +42,9 @@
 
 #define ZCHAR	(0)
 
-char * backup_dir;
-
 void url_percent(const char * src, char * dst);
 void url_nopercent(const char * src, char * dst);
+char * get_backup_dir();
+void set_backup_dir(char *);
 
 #endif

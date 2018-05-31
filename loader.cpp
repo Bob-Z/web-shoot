@@ -115,7 +115,7 @@ static void * thread_routine(void * arg)
 			continue;
 		}
 
-		img=malloc(sizeof(img_t));
+		img=static_cast<img_t*>(malloc(sizeof(img_t)));
 		memset(img,0,sizeof(img_t));
 		img->surf = surf;
 		img->ratio = (double)(img->surf->w) / (double)(img->surf->h);
@@ -140,10 +140,10 @@ loader_t * loader_init(int engine, int max_img, char * keyword, int size, int fi
 	loader_t * loader = NULL;
 	int i;
 
-	loader = malloc(sizeof(loader_t));
+	loader = static_cast<loader_t*>(malloc(sizeof(loader_t)));
 	memset(loader,0,sizeof(loader_t));
 
-	loader->engine = malloc(sizeof(engine_t));
+	loader->engine = static_cast<engine_t*>(malloc(sizeof(engine_t)));
 	memset(loader->engine,0,sizeof(engine_t));
 
 	loader->image_fifo = image_fifo_init(max_img);
@@ -186,7 +186,7 @@ loader_t * loader_init(int engine, int max_img, char * keyword, int size, int fi
 		return NULL;
 	}
 
-	loader->thread_array = malloc( NUM_THREAD * sizeof(pthread_t) );
+	loader->thread_array = static_cast<pthread_t*>(malloc( NUM_THREAD * sizeof(pthread_t)));
 
 	for(i=0; i<NUM_THREAD; i++) {
 		pthread_create(&loader->thread_array[i],NULL,thread_routine,loader);

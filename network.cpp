@@ -46,7 +46,7 @@ static size_t data_to_mem(void *buffer, size_t size, size_t nmemb, void *userp)
 {
 	network_page_t * page = (network_page_t*) userp;
 
-	page->data = realloc(page->data,page->size + (size*nmemb) + 1 ); /*for terminal NULL */
+	page->data = static_cast<char*>(realloc(page->data,page->size + (size*nmemb) + 1 )); /*for terminal NULL */
 	if ( page->data == NULL ) {
 		printd(DEBUG_HTTP,"Cannot realloc\n");
 		return 0;
@@ -175,8 +175,8 @@ int web_to_disk(char * url,char * filename)
 	char * tmp_dir;
 	static long count = 0;
 
-	if(backup_dir) {
-		sprintf(filename,"%s/%s.%d.%ld",backup_dir,TMP_FILE,(int)pthread_self(),count);
+	if(get_backup_dir() != nullptr) {
+		sprintf(filename,"%s/%s.%d.%ld",get_backup_dir(),TMP_FILE,(int)pthread_self(),count);
 		count++;
 	} else {
 		tmp_dir = get_tmp_dir();
@@ -223,7 +223,7 @@ int web_to_disk(char * url,char * filename)
 		close(fd);
 		return -1;
 	}
-	if(thread_ret != CURLE_OK) {
+	if(thread_ret != nullptr) {
 		printd(DEBUG_ERROR,"curl_easy_perform failed: %s\n",curl_error_buffer);
 		curl_easy_cleanup(easyhandle);
 		close(fd);

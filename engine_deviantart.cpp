@@ -166,7 +166,7 @@ static char * engine_get_url(engine_t * engine)
 	int first_page = FALSE;
 	char * url = NULL;
 	int res;
-	internal_t * internal = engine->internal;
+	internal_t * internal = static_cast<internal_t*>(engine->internal);
 
 	pthread_mutex_lock(&internal->page_mutex);
 
@@ -217,10 +217,10 @@ int deviantart_engine_init(engine_t * engine,const char * keyword,int size,int f
 
 	printf("DeviantArt engine\n");
 
-	internal = malloc(sizeof(internal_t));
+	internal = static_cast<internal_t*>(malloc(sizeof(internal_t)));
 	memset(internal,0,sizeof(internal_t));
 
-	internal->page = malloc(sizeof(network_page_t));
+	internal->page = static_cast<network_page_t*>(malloc(sizeof(network_page_t)));
 	memset(internal->page,0,sizeof(network_page_t));
 
 	engine->internal = internal;
