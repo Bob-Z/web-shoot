@@ -35,7 +35,7 @@
 #define MAX_SPRITE 10
 #define MAX_PLAYER 10
 
-#define BACKGROUND_SPEED 0.2
+#define BACKGROUND_SPEED 0.2 // in pixels per frames
 
 #define PLAYER_SIZE 0.20
 #define PLAYER_SPEED 0.7
