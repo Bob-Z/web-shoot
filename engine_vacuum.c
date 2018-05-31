@@ -45,6 +45,7 @@ typedef struct internal {
 	int read_index;
 	char * url;
 	char * original_url;
+	char * previous_url;
 	pthread_mutex_t page_mutex;
 } internal_t;
 
@@ -67,8 +68,14 @@ static int  get_response_page(internal_t * internal)
 		}
 
 		free(internal->url);
-		internal->url = strdup(internal->original_url);
-		printd(DEBUG_URL,"Go back to original URL: %s\n", internal->original_url);
+		internal->url = strdup(internal->previous_url);
+
+		printd(DEBUG_URL,"Go back to previous URL: %s\n", internal->previous_url);
+
+		free(internal->previous_url);
+		internal->previous_url = strdup(internal->original_url);
+
+		return 1;
 	}
 
 	return 0;
@@ -175,7 +182,8 @@ void random_url(internal_t * internal)
 	}
 	while( (rand() % 100) != 0 );
 
-	free(internal->url);
+	free(internal->previous_url);
+	internal->previous_url = internal->url;
 
 	internal->url = strndup(substring_start,substring_end-substring_start);
 	printd(DEBUG_URL,"new target URL: %s\n",internal->url);
@@ -206,6 +214,9 @@ static int engine_destroy(engine_t * engine)
 		if(internal->original_url) {
 			free(internal->original_url);
 		}
+		if(internal->previous_url) {
+			free(internal->previous_url);
+		}
 
 		free(internal);
 	}
@@ -226,11 +237,16 @@ static char * engine_get_url(engine_t * engine)
 	pthread_mutex_lock(&internal->page_mutex);
 
 	while( url == NULL ) {
-		if( get_response_page(internal) == -1) {
+		int res = get_response_page(internal);
+		if( res == -1) {
 			return NULL;
 		}
-		url =  parse_response_page(internal);
-		if( url == NULL ) {
+		if( res == 0 )
+		{
+			url =  parse_response_page(internal);
+		}
+
+		if( url == NULL || res == 1) {
 			printd(DEBUG_PAGE | DEBUG_HTTP,"No more image URL on page %d\n",internal->url);
 			internal->read_index = 0;
 			random_url(internal);
@@ -268,6 +284,7 @@ int vacuum_engine_init(engine_t * engine,const char * url)
 	}
 
 	internal->original_url = strdup(internal->url);
+	internal->previous_url = strdup(internal->url);
 
 	internal->read_index=0;
 
