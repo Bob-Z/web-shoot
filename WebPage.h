@@ -1,6 +1,6 @@
 /*
    Web-shooter is a shoot them up game with random graphics.
-   Copyright (C) 2013-2018 carabobz@gmail.com
+   Copyright (C) 2018 carabobz@gmail.com
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,12 +17,29 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-#include "engine.h"
+#include "network.h"
+#include <string>
+#include <vector>
 
-typedef struct network_page {
-	char * data;
-	size_t size;
-} network_page_t;
+class WebPage
+{
+public:
+	WebPage(const char * p_Url);
 
-int web_to_memory(const char * url, network_page_t * page);
-int web_to_disk(char * url,char * filename);
+	char * getImageUrl();
+
+private:
+	void parseLink();
+        void parseImage();
+	std::string getValidUrl(char * p_pUrl);
+
+	std::string m_Url;
+
+	network_page_t m_Page;
+
+	std::vector<std::string> m_Link;
+
+	std::vector<std::string> m_Image;
+
+	WebPage * m_NextPage;
+};

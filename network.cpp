@@ -1,6 +1,6 @@
 /*
    Web-shooter is a shoot them up game with random graphics.
-   Copyright (C) 2013-2015 carabobz@gmail.com
+   Copyright (C) 2013-2018 carabobz@gmail.com
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ static void * async_perform(void * arg)
 return -1 on error
 return 0 on success
  ******************************/
-int web_to_memory( char * url, network_page_t * page)
+int web_to_memory( const char * url, network_page_t * page)
 {
 	CURL * easyhandle;
 	char * proxy;
